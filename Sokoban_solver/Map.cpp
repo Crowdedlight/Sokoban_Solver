@@ -156,24 +156,35 @@ void Map::plotMap()
     //create image
     Image plot(this->getWidth(), this->getHeight(), Image::RGB, Image::Depth8U);
 
+    //draw entire image black
+    for (int x = 0; x < plot.getWidth(); x++) {
+        for (int y = 0; y < plot.getHeight(); y++) {
+            plot.setPixel8U(x,y,0,0,0);
+        }
+    }
+
     for (auto node : *this->getMapGraph()->getNodesPointer())
     {
         switch (node.pathType)
         {
-        case Wall: //Grey
-            plot.setPixel8U(node.data.x, node.data.y, 139, 141, 145);
+        case Wall: //BLACK
+            //plot.setPixel8U(node.data.x, node.data.y, 139, 141, 145);
             break;
         case Diamond: //BLUE
-            plot.setPixel8U(node.data.x, node.data.y, 0, 0, 255);
+            //plot.setPixel8U(node.data.x, node.data.y, 0, 0, 255);
+            //drawCircle(plot, node, {0,0,255});
             break;
         case Goal: //GREEN
-            plot.setPixel8U(node.data.x, node.data.y, 0, 255, 0);
+            //plot.setPixel8U(node.data.x, node.data.y, 0, 255, 0);
+            //drawCircle(plot, node, {0,255,0});
             break;
-        case Road: //BLACK
-            plot.setPixel8U(node.data.x, node.data.y, 0, 0, 0);
+        case Road: //Grey with black cross
+            //plot.setPixel8U(node.data.x, node.data.y, 0, 0, 0);
+            drawCross(plot, node);
             break;
-        case Start: //START
-            plot.setPixel8U(node.data.x, node.data.y, 255, 0, 0);
+        case Start: //START - Robot
+            //plot.setPixel8U(node.data.x, node.data.y, 255, 0, 0);
+            //drawCircle(plot, node, {255,0,0});
             break;
         default: //NOTHING
             break;
@@ -182,6 +193,47 @@ void Map::plotMap()
 
     //save plot as file
     plot.saveAsPPM("map.ppm");
+}
+
+void Map::drawCross(Image &img, Vertex &pos)
+{
+    int x_curr = (pos.data.x*mapScale);
+    int y_curr = (pos.data.y*mapScale);
+    int x_mid = x_curr + (mapScale/2);
+    int y_mid = y_curr + (mapScale/2);
+
+    //draw entire "pixel area" grey
+    for (int x = x_curr; x < x_curr+mapScale; x++) {
+        for (int y = y_curr; y < y_curr+mapScale; y++) {
+            img.setPixel8U(x, y, 139, 141, 145);
+        }
+    }
+
+    //draw black cross
+    for (int x = x_mid-(mapScale/2); x < x_mid+(mapScale/2); x++) {
+        img.setPixel8U(x, y_mid, 0, 0, 0);
+    }
+    for (int y = y_mid-(mapScale/2); y < y_mid+(mapScale/2); y++) {
+        img.setPixel8U(x_mid, y, 0, 0, 0);
+    }
+}
+
+void Map::drawCircle(Image &img, Vertex &pos, vector<uint8_t> rgb)
+{
+    int x_curr = pos.data.x;
+    int y_curr = pos.data.y;
+    int x_mid = x_curr + (mapScale/2);
+    int y_mid = y_curr + (mapScale/2);
+
+    for (int x = x_mid-(mapScale/2); x < x_mid+(mapScale/2); x++) {
+        for (int y = y_mid-(mapScale/2); y < y_mid+(mapScale/2); y++) {
+
+            double radius = sqrt(pow(x-x_mid,2)+pow(y-y_mid,2));
+            if (radius <= (mapScale/2)) {
+                img.setPixel8U(x, y, rgb[0], rgb[1], rgb[2]);
+            }
+        }
+    }
 }
 
 Graph* Map::getMapGraph()
