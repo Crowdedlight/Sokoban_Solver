@@ -19,7 +19,7 @@ struct Step {
     Vertex* currRoboPos;
 
     Step() {};
-    Step(Step *parent, vector<int> diamonds, Vertex *currRoboPos) : parent(parent), diamonds(std::move(diamonds)),
+    Step(Step *parent, vector<Vertex *> diamonds, Vertex *currRoboPos) : parent(parent), diamonds(diamonds),
                                                                            currRoboPos(currRoboPos) {}
 };
 
