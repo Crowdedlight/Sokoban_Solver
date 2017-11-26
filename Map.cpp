@@ -34,6 +34,7 @@ void Map::LoadMap(string filename)
         this->setTotalDiamonds(diamonds);
 
         int rowNum = 0;
+        int index = 0;
         //get rest of lines and make vertexes and add to map
         while (getline(myfile, line))
         {
@@ -46,31 +47,31 @@ void Map::LoadMap(string filename)
                 case 'X': //WALL
 
                     //new vertex
-                    map.addNode(Vertex(Pixel(i, rowNum), Wall));
+                    map.addNode(Vertex(Pixel(i, rowNum), WALL, index++));
 
                     break;
                 case 'J': //DIAMOND
 
                     //new vertex
-                    map.addNode(Vertex(Pixel(i, rowNum), Diamond));
+                    map.addNode(Vertex(Pixel(i, rowNum), DIAMOND, index++));
 
                     break;
                 case 'G': //GOAL
 
                     //new vertex
-                    map.addNode(Vertex(Pixel(i, rowNum), Goal));
+                    map.addNode(Vertex(Pixel(i, rowNum), GOAL, index++));
 
                     break;
                 case '.': //ROAD
 
                     //new vertex
-                    map.addNode(Vertex(Pixel(i, rowNum), Road));
+                    map.addNode(Vertex(Pixel(i, rowNum), ROAD, index++));
 
                     break;
                 case 'M': //START POSITION
 
                     //new vertex
-                    map.addNode(Vertex(Pixel(i, rowNum), Start));
+                    map.addNode(Vertex(Pixel(i, rowNum), START, index++));
 
                     break;
                 case ' ': // OUTSIDE MAP
@@ -112,9 +113,8 @@ void Map::LoadMap(string filename)
                 //find node that matches
                 Vertex* adjV = map.findNode(adj);
                 //add edge if adj is not wall && Current node is not wall
-                if (adjV != nullptr && adjV->pathType != Wall && node.pathType != Wall)
+                if (adjV != nullptr && adjV->pathType != WALL && node.pathType != WALL)
                 {
-                    //depending on type change weight - TODO
                     map.addEdge(&node, adjV, 1);
                 }
             }
@@ -167,22 +167,22 @@ void Map::plotMap()
     {
         switch (node.pathType)
         {
-        case Wall: //BLACK
+        case WALL: //BLACK
             //plot.setPixel8U(node.data.x, node.data.y, 139, 141, 145);
             break;
-        case Diamond: //BLUE
+        case DIAMOND: //BLUE
             //plot.setPixel8U(node.data.x, node.data.y, 0, 0, 255);
             //drawCircle(plot, node, {0,0,255});
             break;
-        case Goal: //GREEN
+        case GOAL: //GREEN
             //plot.setPixel8U(node.data.x, node.data.y, 0, 255, 0);
             //drawCircle(plot, node, {0,255,0});
             break;
-        case Road: //Grey with black cross
+        case ROAD: //Grey with black cross
             //plot.setPixel8U(node.data.x, node.data.y, 0, 0, 0);
             drawCross(plot, node);
             break;
-        case Start: //START - Robot
+        case START: //START - Robot
             //plot.setPixel8U(node.data.x, node.data.y, 255, 0, 0);
             //drawCircle(plot, node, {255,0,0});
             break;

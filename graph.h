@@ -14,14 +14,14 @@
 using namespace std;
 using namespace rw::sensor;
 
-enum PathType {Wall, Diamond, Goal, Road, Start};
+enum PathType {WALL, DIAMOND, GOAL, ROAD, START};
 
 struct Pixel
 {
     int x;
     int y;
 
-    Pixel(int x, int y) : x(x), y(y) {}
+    Pixel(int x, int y) : x(x), y(y) {};
     Pixel() {};
 
     int getValue(Image* img)
@@ -39,6 +39,14 @@ struct Pixel
 	{
 		return this->x != rhs.x || this->y != rhs.y;
 	}
+
+    Pixel operator-(const Pixel& rhs) const {
+        return Pixel(x-rhs.x, y-rhs.y);
+    }
+
+    Pixel operator+(const Pixel& rhs) const {
+        return Pixel(x+rhs.x, y+rhs.y);
+    }
 };
 
 struct Vertex
@@ -52,10 +60,20 @@ struct Vertex
 	int fScore = INFINITY;
     vector<int> weight;    
     bool visited;
+    int index;
   
     list<Vertex*> adj; // Pointer to an array containing adjacency lists
 
-    Vertex(Pixel pixel, PathType type) : data(pixel), visited(false), pathType(type) {};
+    //find adj by position
+    Vertex* findNeighbour(Pixel data) {
+        for (auto v : adj) {
+            if (v->data == data)
+                return v;
+        }
+        return nullptr;
+    }
+
+    Vertex(Pixel pixel, PathType type, int index) : data(pixel), visited(false), pathType(type), index(index) {};
 };
 
 
@@ -71,9 +89,9 @@ public:
     Vertex* findNode(Pixel data);
 
     vector<Vertex>* getNodesPointer();
-
+    int getSize();
 
 protected:
     vector<Vertex> nodes;
-    int V; // Number of vertices'
+    int totalNodes; // Number of nodes'
 };

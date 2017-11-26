@@ -6,11 +6,12 @@ solver
 	add all diamond positions to openlist
 	
 	while(openlist)
-		next pos from openlist
+		pop next pos from openlist
 		what sides can robot go to
 			Can robot push on that side?
-		FOR pushable sides makes new pos for diamond, add to openlist
+		FOR pushable sides make new pos for diamond, add to openlist
 			check if newstep is deadlocked, then ignore and move on
+			check if move already have been attempted. (Hashtable) - skip if it have been attempted
 			if manhattan distance to a goal is closer than current dist, push to 3rd pos of openlist
 			if it is the same push_back openlist
 			else push_back openlist

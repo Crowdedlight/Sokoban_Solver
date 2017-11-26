@@ -66,6 +66,8 @@ vector<Vertex*> AStar::getPath(Vertex* start, Vertex* cur)
 
 vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 {
+	total_path.clear(); // TODO shouldn't this be cleared?
+
 	closedSet.clear(); // // closedSet is the set of nodes already evaluated
 
 	openSet.push_back(start); // push start to open set

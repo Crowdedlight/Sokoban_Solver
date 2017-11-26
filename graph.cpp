@@ -9,6 +9,7 @@ void Graph::addNode(Vertex v)
 {
 	//v.gScore = ... ; what cost is the different types?
     nodes.push_back(v);
+    totalNodes++;
 }
 
 void Graph::addEdge(Vertex* parent, Vertex* v, int w)
@@ -28,6 +29,10 @@ Vertex* Graph::findNode(Pixel pos)
     }
 }
 
+int Graph::getSize()
+{
+    return this->totalNodes;
+}
 
 
 vector<Vertex>* Graph::getNodesPointer()
