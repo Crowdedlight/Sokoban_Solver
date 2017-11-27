@@ -47,6 +47,11 @@ struct Pixel
     Pixel operator+(const Pixel& rhs) const {
         return Pixel(x+rhs.x, y+rhs.y);
     }
+
+    friend ostream &operator<<(ostream &os, const Pixel &pixel) {
+        os << "x: " << pixel.x << " y: " << pixel.y;
+        return os;
+    }
 };
 
 struct Vertex
@@ -62,7 +67,7 @@ struct Vertex
     bool visited;
     int index;
   
-    list<Vertex*> adj; // Pointer to an array containing adjacency lists
+    vector<Vertex*> adj; // Pointer to an array containing adjacency lists
 
     //find adj by position
     Vertex* findNeighbour(Pixel data) {
@@ -71,6 +76,10 @@ struct Vertex
                 return v;
         }
         return nullptr;
+    }
+
+    bool operator==(const Vertex &rhs) const {
+        return data.x == rhs.data.x && data.y == rhs.data.y;
     }
 
     Vertex(Pixel pixel, PathType type, int index) : data(pixel), visited(false), pathType(type), index(index) {};
@@ -85,10 +94,11 @@ public:
     Graph();   // Constructor
 
     void addNode(Vertex v);
-    void addEdge(Vertex* parent, Vertex* v, int weight);
-    Vertex* findNode(Pixel data);
+    void addEdge(Vertex& parent, Vertex& v, int weight);
+    Vertex& findNode(Pixel data);
 
     vector<Vertex>* getNodesPointer();
+    vector<Vertex>& getNodesRef();
     int getSize();
 
 protected:

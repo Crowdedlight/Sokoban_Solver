@@ -10,24 +10,28 @@
 #include <iostream>
 #include <utility>
 #include <vector>
-#include <bits/unordered_map.h>
 #include <algorithm>
+#include <unordered_map>
 
 struct Step {
     Step* parent;
     vector<Vertex *> diamonds;
     Vertex* currRoboPos;
 
-    Step() {};
-    Step(Step *parent, vector<Vertex *> diamonds, Vertex *currRoboPos) : parent(parent), diamonds(diamonds),
-                                                                           currRoboPos(currRoboPos) {}
+    int robotTravelledLength = 0;
+
+    Step() = default;
+    Step(Step *parent, vector<Vertex *> diamonds, Vertex *currRoboPos) : parent(parent), diamonds(std::move(diamonds)),
+                                                                           currRoboPos(currRoboPos) {};
 };
 
 struct SidePush {
     Vertex * pushFrom;
     Vertex * pushTo;
-    SidePush(Vertex* from, Vertex* to) : pushFrom(from), pushTo(to) {};
-    SidePush() {};
+    vector<Vertex*> movePath;
+
+    SidePush(Vertex* from, Vertex* to, vector<Vertex*> path) : pushFrom(from), pushTo(to), movePath(std::move(path)) {};
+    SidePush() = default;;
 };
 
 class sokobanSolver {
@@ -38,20 +42,20 @@ public:
     vector<string> solve(Graph map);
 
 private:
-    unordered_map initHashFunction(int size);
-    bool isPrime(int num);
-    int nextPrime(int start);
+    void initHashFunction(int size);
     int getHashKey(vector<Vertex*> diamonds);
-    int hashMap[];
     AStar aStar;
+    vector<int> hashMap;
+
     vector<SidePush> getPushableSides(Vertex *currPos, Vertex *currRoboPos);
+    vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
+    vector<int> getDiamondsIndex(vector<Vertex * > diamonds);
+    void setMaptoSnapshot(Step* snapshot, Graph* map, Step * parent);
     bool isDeadlock(Vertex * pos);
     bool isBlocked(Vertex * v);
-    void setMaptoSnapshot(Step* snapshot, Graph* map, Step * parent);
-    vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
     bool isMoveNew(Step* step, unordered_map<int, vector<int>>* hashTable);
     bool isDiamondPosEqual(vector<int> d1, vector<int> d2);
-    vector<int> getDiamondsIndex(vector<Vertex * > diamonds);
+    bool isWinStep(Step*, vector<Vertex*> goals);
 };
 
 

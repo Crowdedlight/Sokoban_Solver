@@ -3,6 +3,7 @@
 #include <fstream>
 #include "graph.h"
 #include <vector>
+#include <cmath>
 using namespace std;
 
 class Map
@@ -27,7 +28,7 @@ private:
     int robotScale = mapScale / 10 + 5;
 
     void drawCross(Image &img, Vertex& pos);
-    void drawCircle(Image &img, Vertex& pos, vector<uint8_t> rgb);
+    void drawCircle(Image &img, Vertex& pos, vector<uint8_t> rgb, int scale);
 
     void setWidth(int width);
     void setHeight(int height);

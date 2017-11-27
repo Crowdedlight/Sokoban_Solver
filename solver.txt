@@ -26,3 +26,22 @@ solver
 
 DATA:
 step = vec<diamonds>, robotpos, parent node, manhattan distance to goal 
+
+TODO DONE:
+AStar må ikke gå igennem DIAMOND noder
+Astar skal lave nye objekt for hver Snapshot, da mappet er ændret.
+Afstand gemmes i snapshot. (Astar Path.size()+1) ligges til snapshots robotLængde
+Når der findes en løsning så gemmes løsning i SolutionList.
+TODO:
+    Derefter lukkes alle branches hvor samlede afstand overstiger løsnings afstand.
+    Ved ny løsning tjekkes distancen, og der beholdes kun løsningen med mindste distance
+Når openList.Empty()
+    så findes løsningerne i SolutionVector
+    vælg løsning med mindst distance. (Burde kun være en)
+    Backtrack løsning til parent == nullptr
+        Dan vector med kode til robot ud af det. Husk at inkludere når robotten skal kører fra A til B.
+            Overvej at inkluderer total_path fra AStar i Step for at kunne udskrive hvilke noder robotten skal køre.
+        Slut resultat skulle gerne være en lang vector med instrukser til robotten.
+        (f.eks. "1" = ligeud, "2" = tilbage, "3" = venstre, "4" = højre)
+            Robot skal sørge for at når den skal tilbage efter at have pushet en CAN så skal den tilbage til den registerer
+            det tidligere kryds så den står på noden bag CAN.

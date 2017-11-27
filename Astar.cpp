@@ -106,12 +106,17 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 
 		for (auto w : current->adj) // check all neighbors
 		{
+            //if type is diamond we cant go though it
+            //APPLICATION SPECIFIC
+            if (w->pathType == DIAMOND)
+                continue;
+
 			if (!(isInClosedSet(w))) // if not on closelist proceed..
 			{
 				/// THIS IS USED TO FIND THE POSITION IN VECTOR vvvvvvvvv
 				auto it = find(current->adj.begin(), current->adj.end(), w);
 				if (it == current->adj.end())
-                cout << "not in vector " << endl;
+                    cout << "not in vector " << endl;
 				else
                 {
 					int i = distance(current->adj.begin(), it);
