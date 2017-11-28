@@ -12,6 +12,7 @@
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
+#include <list>
 
 struct Step {
     Step* parent;
@@ -50,10 +51,12 @@ private:
     vector<SidePush> getPushableSides(Vertex *currPos, Vertex *currRoboPos);
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
     vector<int> getDiamondsIndex(vector<Vertex * > diamonds);
-    void setMaptoSnapshot(Step* snapshot, Graph* map, Step * parent);
+
+    void setMaptoSnapshot(Step& snapshot, Graph* map);
+
     bool isDeadlock(Vertex * newPos);
     bool isBlocked(Vertex * v);
-    bool isMoveNew(Step* step, unordered_map<int, vector<int>>* hashTable);
+    bool isMoveNew(Step* step, unordered_map<int, vector<vector<int>>>* hashTable);
     bool isDiamondPosEqual(vector<int> d1, vector<int> d2);
     bool isWinStep(Step*, vector<Vertex*> goals);
 };

@@ -11,11 +11,11 @@ vector<string> sokobanSolver::solve(Graph map) {
 
     //make openlist
     queue<Step> openList;
-    vector<Step> closedList;
-    vector<Step> solutionList;
+    list<Step> closedList;
+    list<Step> solutionList;
 
     //make hashtable and hashfunction
-    unordered_map<int, vector<int>> hashTable;
+    unordered_map<int, vector<vector<int>>> hashTable;
     initHashFunction(map.getSize());
 
     //init current robot pos
@@ -64,18 +64,18 @@ vector<string> sokobanSolver::solve(Graph map) {
         }
 
         //pop next node to go though
-        Step currStep = openList.front();
+        Step nextStep = openList.front();
         openList.pop();
 
         //put currStep in closedlist
-        closedList.push_back(currStep);
+        closedList.push_back(nextStep);
 
         //getReference from closedSet as that is persistant
-        currStep = closedList.back();
+        Step& currStep = closedList.back();
 
         //set graph to diamond positions if we are not at root
         if (currStep.parent != nullptr)
-            setMaptoSnapshot(&currStep, &map, currStep.parent);
+            setMaptoSnapshot(currStep, &map);
 
         //set robot pos
         currentRoboPos = currStep.currRoboPos;
@@ -104,6 +104,10 @@ vector<string> sokobanSolver::solve(Graph map) {
                 //+1 as we move from side and up to next pos with diamond
                 newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size() +1;
 
+                //Already tried move? - check hashtable - If new it also saves in hashtable
+                if (!isMoveNew(&newStep, &hashTable))
+                    continue;
+
                 //Check if move is end move. Is all diamonds on goals?
                 if (isWinStep(&newStep, goals)) {
                     //save solution in solutionList and set current shortest distance
@@ -116,12 +120,6 @@ vector<string> sokobanSolver::solve(Graph map) {
                     //add to openList
                     openList.push(newStep);
                 }
-
-                //Already tried move? - check has table
-                if (!isMoveNew(&newStep, &hashTable))
-                    continue;
-
-                //TODO heuistics ?
             }
         }
     }
@@ -132,8 +130,7 @@ vector<string> sokobanSolver::solve(Graph map) {
     else {
         //select best solution and backtrack to create solution for robot
         //sort vector so best solution is
-        sort(solutionList.begin(), solutionList.end(), []( const Step& lhs, const Step& rhs)
-        {
+        solutionList.sort([] (const Step & lhs, const Step & rhs) {
             // < == ascending order(smallest first). > == descending order.
             return lhs.robotTravelledLength < rhs.robotTravelledLength;
         });
@@ -142,10 +139,10 @@ vector<string> sokobanSolver::solve(Graph map) {
         //todo backtrack that solution
         //debug
         cout << endl << endl << "DIAMONDS:" << endl;
-        for (auto v : solutionList[0].diamonds) {
+        for (auto v : solutionList.front().diamonds) {
             cout << v->data << endl;
         }
-        cout << "Total Robot length: " << solutionList[0].robotTravelledLength << endl;
+        cout << "Total Robot length: " << solutionList.front().robotTravelledLength << endl;
     }
 
     //TODO return correct thing instead of empty
@@ -161,21 +158,35 @@ bool sokobanSolver::isWinStep(Step* step, vector<Vertex*> goals) {
     return true;
 }
 
-bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<int>>* hashTable) {
+bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>>>* hashTable) {
     //get hashkey
     int hashkey = getHashKey(step->diamonds);
+    vector<int> newPos = getDiamondsIndex(step->diamonds);
 
-    //get pos in hashtable
-    auto it = hashTable->find(hashkey);
-    if (it == hashTable->end()) {
-        //key doesn't exists, move is new
+    //exists in table?
+    if (hashTable->at(hashkey).empty()) {
+        //key doesn't exists, move is new and is first move on this pos
+        vector<vector<int>> newEntry;
+        newEntry.push_back(newPos);
+        hashTable->at(hashkey) =  newEntry;
         return true;
     }
     else {
         //check if pos for diamonds is the same
-        vector<int> newPos = getDiamondsIndex(step->diamonds);
-        vector<int> existingPos = it->second;
-        return !isDiamondPosEqual(existingPos, newPos);
+        const vector<vector<int>>& existingPos = hashTable->at(hashkey);
+
+        for(const auto &pos : existingPos)
+        {
+            if (isDiamondPosEqual(pos, newPos))
+            {
+                //if equal move is not new
+                return false;
+            }
+        }
+
+        //if passed all values and is still unmatched, then insert new pos & return true;
+        hashTable->at(hashkey).push_back(newPos);
+        return true;
     }
 }
 
@@ -209,15 +220,16 @@ vector<Vertex *> sokobanSolver::newDiamondList(vector<Vertex *> oldList, Vertex 
     return newList;
 }
 
-void sokobanSolver::setMaptoSnapshot(Step *snapshot, Graph* map, Step* parent) {
+void sokobanSolver::setMaptoSnapshot(Step& snapshot, Graph* map) {
     //reset diamonds form parent
-    for (auto v : parent->diamonds) {
-        //TODO map->findNode(v->data).pathType = ROAD;
+    for (Vertex& v : map->getNodesRef()) {
+        if (v.pathType == DIAMOND)
+            v.pathType = ROAD;
     }
 
     //set new diamonds
-    for (auto v : snapshot->diamonds) {
-        //TODO map->findNode(v->data).pathType = DIAMOND;
+    for (Vertex* v : snapshot.diamonds) {
+        v->pathType = DIAMOND;
     }
 }
 
