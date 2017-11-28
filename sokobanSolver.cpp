@@ -147,6 +147,10 @@ vector<string> sokobanSolver::solve(Graph map) {
         }
         cout << "Total Robot length: " << solutionList[0].robotTravelledLength << endl;
     }
+
+    //TODO return correct thing instead of empty
+    vector<string> debug = {"debug"};
+    return debug;
 }
 
 bool sokobanSolver::isWinStep(Step* step, vector<Vertex*> goals) {
@@ -217,12 +221,12 @@ void sokobanSolver::setMaptoSnapshot(Step *snapshot, Graph* map, Step* parent) {
     }
 }
 
-bool sokobanSolver::isDeadlock(Vertex *pos) {
+bool sokobanSolver::isDeadlock(Vertex* newPos) {
     //check if pos is deadlock. If two sides is blocked it is in deadlock
-    Vertex * top = pos->findNeighbour(pos->data+Pixel(0,-1));
-    Vertex * left = pos->findNeighbour(pos->data+Pixel(-1,0));
-    Vertex * right = pos->findNeighbour(pos->data+Pixel(+1,0));
-    Vertex * bottom = pos->findNeighbour(pos->data+Pixel(0,+1));
+    Vertex * top = newPos->findNeighbour(newPos->data+Pixel(0,-1));
+    Vertex * left = newPos->findNeighbour(newPos->data+Pixel(-1,0));
+    Vertex * right = newPos->findNeighbour(newPos->data+Pixel(+1,0));
+    Vertex * bottom = newPos->findNeighbour(newPos->data+Pixel(0,+1));
 
     //CASE TOP_LEFT
     if (isBlocked(top) && isBlocked(left))
@@ -239,7 +243,7 @@ bool sokobanSolver::isDeadlock(Vertex *pos) {
 }
 
 bool sokobanSolver::isBlocked(Vertex * v) {
-    return v == nullptr || v->pathType == WALL || v->pathType == DIAMOND;
+    return v == nullptr || v->pathType == WALL; //TODO can we make deadlock with neighbour diamonds? We could have cases where we got temp deadlock but then move the one diamond and result the deadlock || v->pathType == DIAMOND;
 }
 
 vector<SidePush> sokobanSolver::getPushableSides(Vertex *currPos, Vertex *currRoboPos) {
@@ -262,7 +266,7 @@ vector<SidePush> sokobanSolver::getPushableSides(Vertex *currPos, Vertex *currRo
             Pixel deltaP = currPos->data - v->data;
             Pixel newPos = currPos->data + deltaP;
 
-            Vertex* newPosV = v->findNeighbour(newPos);
+            Vertex* newPosV = currPos->findNeighbour(newPos);
             if(newPosV != nullptr && newPosV->pathType != DIAMOND) {
 
                 pushableSides.emplace_back(v, newPosV, path);

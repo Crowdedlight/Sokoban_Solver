@@ -54,13 +54,17 @@ bool AStar::isInOpenSet(Vertex* v)
 	return false;
 }
 
-vector<Vertex*> AStar::getPath(Vertex* start, Vertex* cur)
+vector<Vertex*> AStar::getPath(Vertex* start, Vertex* curr)
 {	
-	if (start->data.x == cur->data.x && start->data.y == cur->data.y)
+	if (start->data == curr->data)
+    {
 		return total_path;
-		getPath(start, cur->path);
-		total_path.push_back(cur);
-
+    }
+    else
+    {
+		getPath(start, curr->path);
+		total_path.push_back(curr);
+    }
 	return total_path;
 }
 
@@ -92,9 +96,9 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 
 		// if current is goal, then append the goal with updated parent information
 		// and then find the total path and return it to robot
-		if ((current->data.x == goal->data.x)  && (current->data.y == goal->data.y)) 
+		if (current->data == goal->data)
 		{
-			total_path.push_back(start);
+			total_path.push_back(start); //TODO should this be goal?
 			//goal->path = cameFrom;
 			//goal->path = cameFrom;
 			total_path = getPath(start, goal);

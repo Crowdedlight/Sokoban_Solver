@@ -51,7 +51,7 @@ private:
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
     vector<int> getDiamondsIndex(vector<Vertex * > diamonds);
     void setMaptoSnapshot(Step* snapshot, Graph* map, Step * parent);
-    bool isDeadlock(Vertex * pos);
+    bool isDeadlock(Vertex * newPos);
     bool isBlocked(Vertex * v);
     bool isMoveNew(Step* step, unordered_map<int, vector<int>>* hashTable);
     bool isDiamondPosEqual(vector<int> d1, vector<int> d2);

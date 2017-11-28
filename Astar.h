@@ -17,7 +17,7 @@ public:
 	AStar();
 	AStar(Graph &g);
 	vector<Vertex*> searchAStar(Vertex* start, Vertex* goal);
-	vector<Vertex*> getPath(Vertex* start,Vertex* current);
+	vector<Vertex*> getPath(Vertex* start,Vertex* curr);
 
 	~AStar();
 protected:

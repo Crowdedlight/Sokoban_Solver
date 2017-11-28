@@ -16,7 +16,7 @@ int main() {
     //make solver
     sokobanSolver solver;
     //try solve
-    //solver.solve(*map.getMapGraph());
+    solver.solve(*map.getMapGraph());
     
-    //system("pause");
+    system("pause");
 }

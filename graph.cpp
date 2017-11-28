@@ -16,7 +16,6 @@ void Graph::addEdge(Vertex & parent, Vertex & v, int w)
 {
     parent.weight.push_back(w); // parent contains the information of edge weights
     parent.adj.push_back(&v);
-    cout << "ref_add:  " << &v << endl;
 }
 
 Vertex& Graph::findNode(Pixel pos)
@@ -25,7 +24,6 @@ Vertex& Graph::findNode(Pixel pos)
     
     for (auto &node : allNodes) {
         if (node.data == pos) {
-            cout << "ref_find: " << &node << endl;
             return node;
         }
     }
