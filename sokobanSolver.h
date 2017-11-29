@@ -56,7 +56,7 @@ private:
 
     bool isDeadlock(Vertex * newPos);
     bool isBlocked(Vertex * v);
-    bool isMoveNew(Step* step, unordered_map<int, vector<vector<int>>>* hashTable);
+    bool isMoveNew(Step* step, unordered_map<int, vector<vector<int>>>& hashTable);
     bool isDiamondPosEqual(vector<int> d1, vector<int> d2);
     bool isWinStep(Step*, vector<Vertex*> goals);
 };

@@ -71,6 +71,9 @@ vector<Vertex*> AStar::getPath(Vertex* start, Vertex* curr)
 vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 {
 	total_path.clear(); // TODO shouldn't this be cleared?
+    //TODO As we work on reference with map we need to zero paths every time we search as diamonds can be moved around
+    for (auto& v : graph->getNodesRef())
+        v.path = nullptr;
 
 	closedSet.clear(); // // closedSet is the set of nodes already evaluated
 
@@ -78,7 +81,7 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 
 	openSet.back()->gScore = 0; // The cost of going from start to start is zero.
     
-    cameFrom = NULL;
+    cameFrom = nullptr;
 
 	// For each node, the total cost of getting from the start node to the goal
 	// by passing by that node. That value is partly known, partly heuristic.
@@ -86,7 +89,7 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 	// For the first node, that value is completely heuristic.
 	openSet.back()->fScore = calculateHscore(start, goal);
 
-	int c = 0; // used to keep tract og current
+	int c = 0; // used to keep track of current
 	int tmp; // used to keep tract of index number
 
 	while (!openSet.empty()) //while openSet is not empty
@@ -98,17 +101,17 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 		// and then find the total path and return it to robot
 		if (current->data == goal->data)
 		{
-			total_path.push_back(start); //TODO should this be goal?
+			total_path.push_back(start);
 			//goal->path = cameFrom;
 			//goal->path = cameFrom;
 			total_path = getPath(start, goal);
 			return total_path; 
 		}
 
-		openSet.erase(openSet.begin()+c); // delete the current nodes from openSet
+		openSet.erase(openSet.begin() + c); // delete the current nodes from openSet
 		closedSet.push_back(current); // and push it to the closedSet
 
-		for (auto w : current->adj) // check all neighbors
+		for (auto* w : current->adj) // check all neighbors
 		{
             //if type is diamond we cant go though it
             //APPLICATION SPECIFIC
@@ -138,6 +141,8 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
                 if ((tentative_gScore < w->gScore))
 				{
 					//cout << "tentative Gscore lower than neigbor.. do nothing.." << endl;
+                    if (current->data == Pixel(1,2))
+                        cout << ""; //TODO remove debug
                     cameFrom = current;
                     w->path = current;
                     w->gScore = tentative_gScore;

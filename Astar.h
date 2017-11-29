@@ -4,6 +4,7 @@
 #include <iterator> 
 #include <vector>
 #include <algorithm>
+#include <list>
 
 #define INFINITY INT_MAX
 

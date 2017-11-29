@@ -81,7 +81,7 @@ vector<string> sokobanSolver::solve(Graph map) {
         currentRoboPos = currStep.currRoboPos;
 
         //set AStar to new map
-        aStar = AStar(map);
+        //aStar = AStar(map); TODO shouldn't be nessecary as AStar works on ref of map
 
         //for each diamond see what can be pushed
         for (Vertex* curr : currStep.diamonds)
@@ -105,7 +105,7 @@ vector<string> sokobanSolver::solve(Graph map) {
                 newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size() +1;
 
                 //Already tried move? - check hashtable - If new it also saves in hashtable
-                if (!isMoveNew(&newStep, &hashTable))
+                if (!isMoveNew(&newStep, hashTable))
                     continue;
 
                 //Check if move is end move. Is all diamonds on goals?
@@ -158,22 +158,23 @@ bool sokobanSolver::isWinStep(Step* step, vector<Vertex*> goals) {
     return true;
 }
 
-bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>>>* hashTable) {
+bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>>>& hashTable) {
     //get hashkey
     int hashkey = getHashKey(step->diamonds);
     vector<int> newPos = getDiamondsIndex(step->diamonds);
 
     //exists in table?
-    if (hashTable->at(hashkey).empty()) {
+    auto& debug = hashTable[hashkey];
+    if (hashTable[hashkey].empty()) {
         //key doesn't exists, move is new and is first move on this pos
         vector<vector<int>> newEntry;
         newEntry.push_back(newPos);
-        hashTable->at(hashkey) =  newEntry;
+        hashTable[hashkey] =  newEntry;
         return true;
     }
     else {
         //check if pos for diamonds is the same
-        const vector<vector<int>>& existingPos = hashTable->at(hashkey);
+        const vector<vector<int>>& existingPos = hashTable[hashkey];
 
         for(const auto &pos : existingPos)
         {
@@ -185,7 +186,7 @@ bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>
         }
 
         //if passed all values and is still unmatched, then insert new pos & return true;
-        hashTable->at(hashkey).push_back(newPos);
+        hashTable[hashkey].push_back(newPos);
         return true;
     }
 }
@@ -208,7 +209,7 @@ bool sokobanSolver::isDiamondPosEqual(vector<int> d1, vector<int> d2) {
 vector<Vertex *> sokobanSolver::newDiamondList(vector<Vertex *> oldList, Vertex *oldPos, Vertex *newPos) {
     vector<Vertex*> newList;
 
-    for (auto v : oldList) {
+    for (auto* v : oldList) {
         if (v->data == oldPos->data)
             continue;
         else
@@ -229,7 +230,8 @@ void sokobanSolver::setMaptoSnapshot(Step& snapshot, Graph* map) {
 
     //set new diamonds
     for (Vertex* v : snapshot.diamonds) {
-        v->pathType = DIAMOND;
+        //TODO if I do this directly on v it doesn't save in map. Even though v should be a pointer to the vertex in map
+        map->findNode(v->data).pathType = DIAMOND;
     }
 }
 
