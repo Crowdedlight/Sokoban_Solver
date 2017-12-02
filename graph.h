@@ -71,7 +71,7 @@ struct Vertex
 
     //find adj by position
     Vertex* findNeighbour(Pixel data) {
-        for (auto v : adj) {
+        for (auto v : adj) { //TODO should it be auto* ?
             if (v->data == data)
                 return v;
         }

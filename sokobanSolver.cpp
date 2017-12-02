@@ -25,21 +25,21 @@ vector<string> sokobanSolver::solve(Graph map) {
     aStar = AStar(map);
 
     //best solution move number
-    int bestSolutionRobotMoves = 0;
+    int bestSolutionRobotMoves = INFINITY;
 
     //find diamond position and add to openlist && add robot current pos to currentRobotPos
-    vector<Vertex>* nodes = map.getNodesPointer();
+    vector<Vertex>& nodes = map.getNodesRef();
     vector<Vertex *> diamondPosIndex;
     vector<Vertex *> goals;
-    for(int i = 0; i < nodes->size(); i++) {
-        if (nodes->operator[](i).pathType == DIAMOND) {
-            diamondPosIndex.push_back(&nodes->operator[](i));
+    for(Vertex & node : nodes ) {
+        if (node.pathType == DIAMOND) {
+            diamondPosIndex.push_back(&node);
         }
-        else if (nodes->operator[](i).pathType == GOAL) {
-            goals.push_back(&nodes->operator[](i));
+        else if (node.pathType == GOAL) {
+            goals.push_back(&node);
         }
-        else if (nodes->operator[](i).pathType == START) {
-            currentRoboPos = &nodes->operator[](i);
+        else if (node.pathType == START) {
+            currentRoboPos = &node;
         }
     }
 
@@ -80,14 +80,14 @@ vector<string> sokobanSolver::solve(Graph map) {
         //set robot pos
         currentRoboPos = currStep.currRoboPos;
 
-        //set AStar to new map
-        //aStar = AStar(map); TODO shouldn't be nessecary as AStar works on ref of map
-
         //for each diamond see what can be pushed
         for (Vertex* curr : currStep.diamonds)
         {
+            //todo again.. the reference issues
+            Vertex & curr_real = map.getNodesRef()[curr->index];
+
             //What sides can robot go to and push
-            vector<SidePush> sides = getPushableSides(curr, currentRoboPos);
+            vector<SidePush> sides = getPushableSides(curr_real, *currentRoboPos, map);
 
             //for pushable sides check if newStep is deadlock
             for (auto s : sides) {
@@ -98,18 +98,18 @@ vector<string> sokobanSolver::solve(Graph map) {
                 //Make move
                 Step newStep;
                 newStep.parent = &currStep; //Parent is the current step
-                newStep.currRoboPos = curr; //robot ends up in diamonds prev location
-                newStep.diamonds = newDiamondList(currStep.diamonds, curr, s.pushTo);
+                newStep.currRoboPos = &curr_real; //robot ends up in diamonds prev location todo as curr & currPos is not correct refs this is maybe where the problem originates, as then roboPos later on will be wrong ref
+                newStep.diamonds = newDiamondList(currStep.diamonds, &curr_real, s.pushTo);
 
                 //+1 as we move from side and up to next pos with diamond
-                newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size() +1;
+                newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size() +1; //todo not counting correctly exactly
 
                 //Already tried move? - check hashtable - If new it also saves in hashtable
                 if (!isMoveNew(&newStep, hashTable))
                     continue;
 
                 //Check if move is end move. Is all diamonds on goals?
-                if (isWinStep(&newStep, goals)) {
+                if (isWinStep(&newStep)) {
                     //save solution in solutionList and set current shortest distance
                     if (newStep.robotTravelledLength < bestSolutionRobotMoves)
                         bestSolutionRobotMoves = newStep.robotTravelledLength;
@@ -124,9 +124,17 @@ vector<string> sokobanSolver::solve(Graph map) {
         }
     }
 
+    cout << endl << "solution list" << endl;
+    for (auto s : solutionList)
+    {
+        cout << "diamond1:" << s.diamonds[0]->data << ", diamond2:" << s.diamonds[1]->data << endl;
+    }
+
     //While is done, if solution exists it is in solutionVector
     if (solutionList.empty())
+    {
         cout << "Couldn't find a solution..." << endl;
+    }
     else {
         //select best solution and backtrack to create solution for robot
         //sort vector so best solution is
@@ -135,8 +143,9 @@ vector<string> sokobanSolver::solve(Graph map) {
             return lhs.robotTravelledLength < rhs.robotTravelledLength;
         });
 
-        //Best solution is then first element in vector[0].
+        //Best solution is then first element in vector[0]. (Check if that is true...)
         //todo backtrack that solution
+
         //debug
         cout << endl << endl << "DIAMONDS:" << endl;
         for (auto v : solutionList.front().diamonds) {
@@ -150,9 +159,10 @@ vector<string> sokobanSolver::solve(Graph map) {
     return debug;
 }
 
-bool sokobanSolver::isWinStep(Step* step, vector<Vertex*> goals) {
-    for(auto v : step->diamonds) {
-        if (find(goals.begin(), goals.end(), v) == goals.end()) //TODO i might not be able to do this...
+bool sokobanSolver::isWinStep(Step* step) {
+    //if no diamonds are on anything else than "goal" type we have a solution
+    for(auto& v : step->diamonds) {
+        if (v->pathType != GOAL)
             return false;
     }
     return true;
@@ -162,6 +172,9 @@ bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>
     //get hashkey
     int hashkey = getHashKey(step->diamonds);
     vector<int> newPos = getDiamondsIndex(step->diamonds);
+
+    //add robotPos to vector
+    newPos.push_back(step->currRoboPos->index);
 
     //exists in table?
     auto& debug = hashTable[hashkey];
@@ -178,11 +191,9 @@ bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>
 
         for(const auto &pos : existingPos)
         {
+            //if equal move is not new. Also checks for robo pos
             if (isDiamondPosEqual(pos, newPos))
-            {
-                //if equal move is not new
                 return false;
-            }
         }
 
         //if passed all values and is still unmatched, then insert new pos & return true;
@@ -193,13 +204,13 @@ bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>
 
 vector<int> sokobanSolver::getDiamondsIndex(vector<Vertex *> diamonds) {
     vector<int> list;
-    for (auto v : diamonds)
+    for (auto& v : diamonds)
         list.push_back(v->index);
     return list;
 }
 
 bool sokobanSolver::isDiamondPosEqual(vector<int> d1, vector<int> d2) {
-    for(auto v : d1) {
+    for(auto& v : d1) {
         if (find(d2.begin(), d2.end(), v) == d2.end())
             return false;
     }
@@ -231,7 +242,7 @@ void sokobanSolver::setMaptoSnapshot(Step& snapshot, Graph* map) {
     //set new diamonds
     for (Vertex* v : snapshot.diamonds) {
         //TODO if I do this directly on v it doesn't save in map. Even though v should be a pointer to the vertex in map
-        map->findNode(v->data).pathType = DIAMOND;
+        map->getNodesRef()[v->index].pathType = DIAMOND;
     }
 }
 
@@ -241,6 +252,10 @@ bool sokobanSolver::isDeadlock(Vertex* newPos) {
     Vertex * left = newPos->findNeighbour(newPos->data+Pixel(-1,0));
     Vertex * right = newPos->findNeighbour(newPos->data+Pixel(+1,0));
     Vertex * bottom = newPos->findNeighbour(newPos->data+Pixel(0,+1));
+
+    //never deadlock when target is a goal
+    if (newPos->pathType == GOAL)
+        return false;
 
     //CASE TOP_LEFT
     if (isBlocked(top) && isBlocked(left))
@@ -254,33 +269,39 @@ bool sokobanSolver::isDeadlock(Vertex* newPos) {
     //CASE BOT_RIGHT
     if (isBlocked(bottom) && isBlocked(right))
         return true;
+
+    //if all has been zero return false
+    return false;
 }
 
 bool sokobanSolver::isBlocked(Vertex * v) {
     return v == nullptr || v->pathType == WALL; //TODO can we make deadlock with neighbour diamonds? We could have cases where we got temp deadlock but then move the one diamond and result the deadlock || v->pathType == DIAMOND;
 }
 
-vector<SidePush> sokobanSolver::getPushableSides(Vertex *currPos, Vertex *currRoboPos) {
+vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRoboPos, Graph& map) {
     //try to walk to left and up sides. If it can't walk to them then it can't push to them either
     //if it can walk to them try and walk to the other also
 
     vector<SidePush> pushableSides;
 
     //TODO consider changing this so it utilize sides positions...
-    for (Vertex* v : currPos->adj) {
+    for (auto v : currPos.adj) {
+
+        //get real reference due to issues with auto v : adj
+        Vertex & v_real = map.getNodesRef()[v->index];
 
         //if current adj is wall or diamond skip it
-        if (v->pathType == DIAMOND)
+        if (v_real.pathType == DIAMOND)
             continue;
 
-        vector<Vertex*> path = aStar.searchAStar(currRoboPos, v);
+        vector<Vertex*> path = aStar.searchAStar(currRoboPos, v_real);
         if (!path.empty()) {
             //if path is not empty robot can go there
             //check if side is pushable
-            Pixel deltaP = currPos->data - v->data;
-            Pixel newPos = currPos->data + deltaP;
+            Pixel deltaP = currPos.data - v->data;
+            Pixel newPos = currPos.data + deltaP;
 
-            Vertex* newPosV = currPos->findNeighbour(newPos);
+            Vertex* newPosV = currPos.findNeighbour(newPos);
             if(newPosV != nullptr && newPosV->pathType != DIAMOND) {
 
                 pushableSides.emplace_back(v, newPosV, path);

@@ -15,7 +15,7 @@
 #include <list>
 
 struct Step {
-    Step* parent;
+    Step* parent = nullptr;
     vector<Vertex *> diamonds;
     Vertex* currRoboPos;
 
@@ -48,7 +48,7 @@ private:
     AStar aStar;
     vector<int> hashMap;
 
-    vector<SidePush> getPushableSides(Vertex *currPos, Vertex *currRoboPos);
+    vector<SidePush> getPushableSides(Vertex & currPos, Vertex & currRoboPos, Graph& map);
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
     vector<int> getDiamondsIndex(vector<Vertex * > diamonds);
 
@@ -58,7 +58,7 @@ private:
     bool isBlocked(Vertex * v);
     bool isMoveNew(Step* step, unordered_map<int, vector<vector<int>>>& hashTable);
     bool isDiamondPosEqual(vector<int> d1, vector<int> d2);
-    bool isWinStep(Step*, vector<Vertex*> goals);
+    bool isWinStep(Step*);
 };
 
 

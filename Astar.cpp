@@ -9,9 +9,9 @@ AStar::AStar(Graph &g)
 	graph = &g; // graph is not copied over in this program
 }
 
-int AStar::calculateHscore(Vertex* st, Vertex* go)
+int AStar::calculateHscore(Vertex st, Vertex go)
 {
-	int H = (abs(st->data.x - go->data.x) + abs(st->data.y - go->data.y));
+	int H = (abs(st.data.x - go.data.x) + abs(st.data.y - go.data.y));
 	return H;
 }
 
@@ -68,20 +68,31 @@ vector<Vertex*> AStar::getPath(Vertex* start, Vertex* curr)
 	return total_path;
 }
 
-vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
+vector<Vertex*> AStar::searchAStar(Vertex& start, Vertex& goal)
 {
 	total_path.clear(); // TODO shouldn't this be cleared?
     //TODO As we work on reference with map we need to zero paths every time we search as diamonds can be moved around
     for (auto& v : graph->getNodesRef())
+    {
         v.path = nullptr;
+        v.gScore = INFINITY;
+        v.fScore = INFINITY;
+    }
+
+    //due to reference issue get the right references from the map
+    Vertex & startRef = graph->findNode(start.data);
+    Vertex & goalRef = graph->findNode(goal.data);
+
+    //goalRef.visited = true;
+    start.visited = true;
 
 	closedSet.clear(); // // closedSet is the set of nodes already evaluated
 
-	openSet.push_back(start); // push start to open set
+	openSet.push_back(&start); // push start to open set
 
 	openSet.back()->gScore = 0; // The cost of going from start to start is zero.
     
-    cameFrom = nullptr;
+    //cameFrom = nullptr;
 
 	// For each node, the total cost of getting from the start node to the goal
 	// by passing by that node. That value is partly known, partly heuristic.
@@ -99,26 +110,29 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 
 		// if current is goal, then append the goal with updated parent information
 		// and then find the total path and return it to robot
-		if (current->data == goal->data)
+		if (current->data == goal.data)
 		{
-			total_path.push_back(start);
+			total_path.push_back(&start);
 			//goal->path = cameFrom;
 			//goal->path = cameFrom;
-			total_path = getPath(start, goal);
+			total_path = getPath(&start, &goal);
 			return total_path; 
 		}
 
 		openSet.erase(openSet.begin() + c); // delete the current nodes from openSet
 		closedSet.push_back(current); // and push it to the closedSet
 
-		for (auto* w : current->adj) // check all neighbors
+		for (auto w : current->adj) // check all neighbors
 		{
+            //todo using workaround as something with for-loop and getting references, not copies doesn't work... Figure out if time
+            Vertex & w_real = graph->getNodesRef()[w->index];
+
             //if type is diamond we cant go though it
             //APPLICATION SPECIFIC
-            if (w->pathType == DIAMOND)
+            if (w_real.pathType == DIAMOND)
                 continue;
 
-			if (!(isInClosedSet(w))) // if not on closelist proceed..
+			if (!(isInClosedSet(&w_real))) // if not on closelist proceed..
 			{
 				/// THIS IS USED TO FIND THE POSITION IN VECTOR vvvvvvvvv
 				auto it = find(current->adj.begin(), current->adj.end(), w);
@@ -130,23 +144,21 @@ vector<Vertex*> AStar::searchAStar(Vertex* start, Vertex* goal)
 					tmp = i;
                 }/// THIS IS USED TO FIND THE POSITION IN VECTOR ^^^^^^^^
 
-				if (!(isInOpenSet(w)))
+				if (!(isInOpenSet(&w_real)))
 				{
-					openSet.push_back(w);
+					openSet.push_back(&w_real);
 				}
                 
                 int tentative_gScore = current->gScore + current->weight[tmp];
                 bool better_tentive;
                 
-                if ((tentative_gScore < w->gScore))
+                if ((tentative_gScore < w_real.gScore))
 				{
 					//cout << "tentative Gscore lower than neigbor.. do nothing.." << endl;
-                    if (current->data == Pixel(1,2))
-                        cout << ""; //TODO remove debug
-                    cameFrom = current;
-                    w->path = current;
-                    w->gScore = tentative_gScore;
-                    w->fScore = w->gScore + calculateHscore(w, goal);
+                    //cameFrom = current;
+                    w_real.path = &graph->getNodesRef()[current->index];
+                    w_real.gScore = tentative_gScore;
+                    w_real.fScore = w_real.gScore + calculateHscore(w_real, goal);
 				}
 				
 			} // else skip that one
