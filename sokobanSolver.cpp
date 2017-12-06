@@ -207,6 +207,15 @@ vector<string> sokobanSolver::getRobotPlan(Step &solution) {
         //push diamond one forward. (Pushing diamond one forward is indicated with "D" instead of "F")
         plan.emplace_back("D");
     }
+
+    //output size of solution
+    int sokobanSteps = 0;
+    for (const auto& s : plan)
+        if (s == "F" || s == "D")
+            sokobanSteps++;
+
+    cout << "Plan Sokoban Steps: " << sokobanSteps << endl;
+
     return plan;
 }
 
