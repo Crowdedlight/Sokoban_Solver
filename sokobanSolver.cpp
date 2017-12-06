@@ -64,6 +64,9 @@ vector<string> sokobanSolver::solve(Graph map) {
             counter = 0;
         }
 
+        //before popping next node sort list for heuristisk
+
+
         //pop next node to go though
         Step nextStep = openList.front();
         openList.pop();
@@ -475,9 +478,32 @@ int sokobanSolver::getHashKey(vector<Vertex *> diamonds) {
 }
 
 void sokobanSolver::initHashFunction(int size) {
-    //srand (time(nullptr));
+    srand (time(NULL));
     hashMap.resize(size);
     for(int i = 0; i < size; i++) {
         hashMap[i] = rand();
+    }
+}
+
+int sokobanSolver::getHeuristics(Pixel from, Pixel to)
+{
+    return (from.x + to.x) + (from.y + to.y);
+}
+
+Pixel sokobanSolver::getClosestDiamond(Pixel currPos, vector<Vertex*> diamonds)
+{
+    //calculate the manhattan for each diamond and return the pos of the closest diamond
+    int closest = INFINITY;
+    Pixel closestDiamond;
+
+    for(auto d : diamonds)
+    {
+        int dist = getHeuristics(currPos, d->data);
+
+        if(dist <= closest)
+        {
+            closest = dist;
+            closestDiamond = d->data;
+        }
     }
 }

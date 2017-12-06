@@ -45,10 +45,13 @@ public:
     vector<string> solve(Graph map);
 
 private:
-    void initHashFunction(int size);
-    int getHashKey(vector<Vertex*> diamonds);
     AStar aStar;
     vector<int> hashMap;
+
+    void initHashFunction(int size);
+    int getHashKey(vector<Vertex*> diamonds);
+    int getHeuristics(Pixel from, Pixel to);
+    Pixel getClosestDiamond(Pixel currPos, vector<Vertex*> diamonds);
 
     vector<SidePush> getPushableSides(Vertex & currPos, Vertex & currRoboPos, Graph& map);
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
