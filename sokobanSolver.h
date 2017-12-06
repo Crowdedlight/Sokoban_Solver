@@ -17,13 +17,15 @@
 struct Step {
     Step* parent = nullptr;
     vector<Vertex *> diamonds;
-    Vertex* currRoboPos;
+    Vertex* finishedRoboPos;
+    vector<Vertex*> movePath;
+    Vertex* robotStartPosition;
 
     int robotTravelledLength = 0;
 
     Step() = default;
     Step(Step *parent, vector<Vertex *> diamonds, Vertex *currRoboPos) : parent(parent), diamonds(std::move(diamonds)),
-                                                                           currRoboPos(currRoboPos) {};
+                                                                           finishedRoboPos(currRoboPos) {};
 };
 
 struct SidePush {
@@ -51,6 +53,11 @@ private:
     vector<SidePush> getPushableSides(Vertex & currPos, Vertex & currRoboPos, Graph& map);
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
     vector<int> getDiamondsIndex(vector<Vertex * > diamonds);
+    vector<string> getRobotPlan(Step & solution);
+    vector<string> getRobotMovesFromPath(vector<Vertex*> path, string& startDir);
+    vector<string> getRotateToDir(string targetDir, string startDir);
+    string rotateDir(string curr, string rot);
+    string dirToNextPoint(Pixel delta);
 
     void setMaptoSnapshot(Step& snapshot, Graph* map);
 

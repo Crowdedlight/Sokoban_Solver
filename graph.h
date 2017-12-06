@@ -103,5 +103,5 @@ public:
 
 protected:
     vector<Vertex> nodes;
-    int totalNodes; // Number of nodes'
+    int totalNodes = 0; // Number of nodes'
 };

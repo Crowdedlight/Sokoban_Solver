@@ -16,7 +16,13 @@ int main() {
     //make solver
     sokobanSolver solver;
     //try solve
-    solver.solve(*map.getMapGraph());
+    vector<string> plan = solver.solve(*map.getMapGraph());
+
+    cout << "Robot Plan:" << endl;
+    for(const auto& p : plan)
+    {
+        cout << p << ",";
+    }
     
     system("pause");
 }

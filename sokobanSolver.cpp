@@ -45,7 +45,8 @@ vector<string> sokobanSolver::solve(Graph map) {
 
     //save first step
     Step firstStep;
-    firstStep.currRoboPos = currentRoboPos;
+    firstStep.finishedRoboPos = currentRoboPos;
+    firstStep.robotStartPosition = currentRoboPos;
     firstStep.parent = nullptr; //First step
     firstStep.diamonds = diamondPosIndex;
     openList.push(firstStep);
@@ -78,7 +79,7 @@ vector<string> sokobanSolver::solve(Graph map) {
             setMaptoSnapshot(currStep, &map);
 
         //set robot pos
-        currentRoboPos = currStep.currRoboPos;
+        currentRoboPos = currStep.finishedRoboPos;
 
         //for each diamond see what can be pushed
         for (Vertex* curr : currStep.diamonds)
@@ -98,8 +99,10 @@ vector<string> sokobanSolver::solve(Graph map) {
                 //Make move
                 Step newStep;
                 newStep.parent = &currStep; //Parent is the current step
-                newStep.currRoboPos = &curr_real; //robot ends up in diamonds prev location todo as curr & currPos is not correct refs this is maybe where the problem originates, as then roboPos later on will be wrong ref
+                newStep.finishedRoboPos = &curr_real; //robot ends up in diamonds prev location todo as curr & currPos is not correct refs this is maybe where the problem originates, as then roboPos later on will be wrong ref
                 newStep.diamonds = newDiamondList(currStep.diamonds, &curr_real, s.pushTo);
+                newStep.movePath = s.movePath;
+                newStep.robotStartPosition = currentRoboPos;
 
                 //+1 as we move from side and up to next pos with diamond
                 newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size() +1; //todo not counting correctly exactly
@@ -146,6 +149,7 @@ vector<string> sokobanSolver::solve(Graph map) {
         //Best solution is then first element in vector[0]. (Check if that is true...)
         //todo backtrack that solution
 
+
         //debug
         cout << endl << endl << "DIAMONDS:" << endl;
         for (auto v : solutionList.front().diamonds) {
@@ -154,9 +158,151 @@ vector<string> sokobanSolver::solve(Graph map) {
         cout << "Total Robot length: " << solutionList.front().robotTravelledLength << endl;
     }
 
-    //TODO return correct thing instead of empty
-    vector<string> debug = {"debug"};
-    return debug;
+    return getRobotPlan(solutionList.front());
+}
+
+vector<string> sokobanSolver::getRobotPlan(Step &solution) {
+    vector<string> plan;
+    string robDirection = "N";
+
+    vector<Step> solutionActions;
+    while (true)
+    {
+        //break on last pos without including it as no changes happen in first step.
+        if (solution.parent == nullptr)
+            break;
+
+        //add current to vector and set new solution
+        solutionActions.insert(solutionActions.begin(), solution);
+
+        //set new solution
+        solution = *solution.parent;
+    }
+
+    //go though vector of steps and write out path for robot
+    for(auto& st : solutionActions)
+    {
+        //get moves from current position of robot to position before pushing diamond
+        vector<string> movePath = getRobotMovesFromPath(st.movePath, robDirection);
+        //push back on plan
+        for(const auto& p : movePath)
+            plan.push_back(p);
+
+        //rotate to face diamond getting pushed. currRoboPos is where the pushed diamond was, and where the robot will end
+        Pixel delta;
+        if (st.movePath.empty())
+            delta = st.finishedRoboPos->data - st.robotStartPosition->data;
+        else
+            delta = st.finishedRoboPos->data - st.movePath.back()->data;
+
+        string targetDir = dirToNextPoint(delta);
+        vector<string> rotToTarget = getRotateToDir(targetDir, robDirection);
+
+        for(const auto& rot : rotToTarget)
+            plan.push_back(rot);
+
+        //robot now is in target dir
+        robDirection = targetDir;
+
+        //push diamond one forward. (Pushing diamond one forward is indicated with "D" instead of "F")
+        plan.emplace_back("D");
+    }
+    return plan;
+}
+
+vector<string> sokobanSolver::getRobotMovesFromPath(vector<Vertex *> path, string& startDir) {
+    vector<string> pathList;
+
+    //null check - As in now needing to move before pushing diamond
+    if (path.empty())
+        return pathList;
+
+    for(int i = 0; i < path.size() -1; i++)
+    {
+        //what way is next point
+        Pixel delta = path[i+1]->data - path[i]->data;
+        string targetDir = dirToNextPoint(delta);
+
+        //get rotations to turn around in right direction
+        vector<string> rotations = getRotateToDir(targetDir, startDir);
+            for (const auto& rot : rotations)
+                pathList.push_back(rot);
+
+        //set startDir to the targetDir, as the robot now is facing a different way
+        startDir = targetDir;
+
+        //add a forward as we now have right orientation and need to move one forward
+        pathList.emplace_back("F");
+    }
+
+    return pathList;
+}
+
+string sokobanSolver::dirToNextPoint(Pixel delta) {
+    if (delta == Pixel(0,1)) //DOWN
+    {
+        return "S";
+    }
+    else if (delta == Pixel(1,0)) //RIGHT
+    {
+        return "E";
+    }
+    else if (delta == Pixel(-1,0)) //LEFT
+    {
+        return "W";
+    }
+    else if (delta == Pixel(0,-1)) //UP
+    {
+        return "N";
+    }
+}
+
+//check what way is fastest to rotate and return vector with commands for that
+vector<string> sokobanSolver::getRotateToDir(string targetDir, string startDir) {
+    vector<string> rotationsCCW;
+    vector<string> rotationsCW;
+    string currCCW = startDir;
+    string currCW = startDir;
+
+    while (targetDir != currCCW) {
+        currCCW = rotateDir(currCCW, "CCW");
+        rotationsCCW.emplace_back("CCW");
+    }
+
+    while (targetDir != currCW)
+    {
+        currCW = rotateDir(currCW, "CW");
+        rotationsCW.emplace_back("CW");
+    }
+
+    if(rotationsCCW.size() <= rotationsCW.size())
+        return rotationsCCW;
+    else
+        return rotationsCW;
+}
+
+string sokobanSolver::rotateDir(string curr, string rot) {
+    if (rot == "CCW") {
+        if (curr == "N")
+            return "W";
+        else if (curr == "W")
+            return "S";
+        else if (curr == "S")
+            return "E";
+        else if (curr == "E")
+            return "N";
+    }
+    else //CW
+    {
+        if (curr == "N")
+            return "E";
+        else if (curr == "E")
+            return "S";
+        else if (curr == "S")
+            return "W";
+        else if (curr == "W")
+            return "N";
+    }
 }
 
 bool sokobanSolver::isWinStep(Step* step) {
@@ -174,7 +320,7 @@ bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>
     vector<int> newPos = getDiamondsIndex(step->diamonds);
 
     //add robotPos to vector
-    newPos.push_back(step->currRoboPos->index);
+    newPos.push_back(step->finishedRoboPos->index);
 
     //exists in table?
     auto& debug = hashTable[hashkey];
@@ -320,7 +466,7 @@ int sokobanSolver::getHashKey(vector<Vertex *> diamonds) {
 }
 
 void sokobanSolver::initHashFunction(int size) {
-    srand (time(NULL));
+    //srand (time(nullptr));
     hashMap.resize(size);
     for(int i = 0; i < size; i++) {
         hashMap[i] = rand();
