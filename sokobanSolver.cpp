@@ -57,7 +57,7 @@ vector<string> sokobanSolver::solve(Graph map) {
     //MAIN LOOP
     while (!openList.empty()) {
         //todo remove debug
-        if (counter < 1000)
+        if (counter < 4000)
             counter++;
         else {
             cout << "Number of steps in openList: " << openList.size() << endl;
@@ -76,6 +76,10 @@ vector<string> sokobanSolver::solve(Graph map) {
 
         //put currStep in closedlist
         closedList.push_back(nextStep);
+
+        //if current branch is less than the best solution close it off, still saved in closedlist
+        if (nextStep.robotTravelledLength > bestSolutionRobotMoves)
+            continue;
 
         //getReference from closedSet as that is persistant
         Step& currStep = closedList.back();
@@ -158,7 +162,7 @@ vector<string> sokobanSolver::solve(Graph map) {
                     count++;
             }
 
-            if (count < 2)
+            if (count < 4)
                 continue;
 
             for(const auto& d : s.diamonds)
