@@ -20,11 +20,12 @@ struct Step {
     Vertex* finishedRoboPos;
     vector<Vertex*> movePath;
     Vertex* robotStartPosition;
+    int distanceToClosestGoal = INFINITY;
 
     int robotTravelledLength = 0;
 
     Step() = default;
-    Step(Step *parent, vector<Vertex *> diamonds, Vertex *currRoboPos) : parent(parent), diamonds(std::move(diamonds)),
+    Step(Step *parent, vector<Vertex *> diamonds, Vertex *currRoboPos) : parent(parent), diamonds(diamonds),
                                                                            finishedRoboPos(currRoboPos) {};
 };
 
@@ -51,7 +52,7 @@ private:
     void initHashFunction(int size);
     int getHashKey(vector<Vertex*> diamonds);
     int getHeuristics(Pixel from, Pixel to);
-    Pixel getClosestDiamond(Pixel currPos, vector<Vertex*> diamonds);
+    Pixel getClosestGoal(Pixel currPos, vector<Vertex *> goals);
 
     vector<SidePush> getPushableSides(Vertex & currPos, Vertex & currRoboPos, Graph& map);
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
@@ -68,7 +69,7 @@ private:
     bool isBlocked(Vertex * v);
     bool isMoveNew(Step* step, unordered_map<int, vector<vector<int>>>& hashTable);
     bool isDiamondPosEqual(vector<int> d1, vector<int> d2);
-    bool isWinStep(Step*);
+    bool isWinStep(Step*, vector<Vertex*> goals);
 };
 
 

@@ -1,6 +1,5 @@
 #include <iostream>
 #include "graph.h"
-#include "Image.hpp"
 #include "Map.h"
 #include "sokobanSolver.h"
 
@@ -9,7 +8,7 @@ using namespace std;
 int main() {
     
     //make Map object
-    Map map("../inputMaps/Sokoban2");
+    Map map("../inputMaps/inputMap");
 
     map.plotMap();
 

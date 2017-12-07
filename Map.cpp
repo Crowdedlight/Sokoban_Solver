@@ -158,24 +158,19 @@ void Map::plotMap()
         switch (node.pathType)
         {
         case WALL: //BLACK
-            //plot.setPixel8U(node.data.x, node.data.y, 139, 141, 145);
             break;
         case DIAMOND: //BLUE
-            //plot.setPixel8U(node.data.x, node.data.y, 0, 0, 255);
             drawCross(plot, node);
             drawCircle(plot, node, {0,0,255}, objectScale);
             break;
         case GOAL: //GREEN
-            //plot.setPixel8U(node.data.x, node.data.y, 0, 255, 0);
             drawCross(plot, node);
             drawCircle(plot, node, {0,255,0}, objectScale);
             break;
         case ROAD: //Grey with black cross
-            //plot.setPixel8U(node.data.x, node.data.y, 0, 0, 0);
             drawCross(plot, node);
             break;
         case START: //START - Robot
-            //plot.setPixel8U(node.data.x, node.data.y, 255, 0, 0);
             drawCross(plot, node);
             drawCircle(plot, node, {255,0,0}, robotScale);
             break;

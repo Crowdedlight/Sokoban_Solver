@@ -69,9 +69,9 @@ struct Vertex
   
     vector<Vertex*> adj; // Pointer to an array containing adjacency lists
 
-    //find adj by position
+    //find adj by position todo fix ref issue... Is rooted in the adj list
     Vertex* findNeighbour(Pixel data) {
-        for (auto v : adj) { //TODO should it be auto* ?
+        for (auto v : adj) {
             if (v->data == data)
                 return v;
         }

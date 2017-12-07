@@ -80,13 +80,11 @@ vector<Vertex*> AStar::searchAStar(Vertex& start, Vertex& goal)
     }
 
     //due to reference issue get the right references from the map
-    Vertex & startRef = graph->findNode(start.data);
-    Vertex & goalRef = graph->findNode(goal.data);
+    //Vertex & startRef = graph->findNode(start.data);
+    //Vertex & goalRef = graph->findNode(goal.data);
 
-    //goalRef.visited = true;
-    start.visited = true;
-
-	closedSet.clear(); // // closedSet is the set of nodes already evaluated
+	closedSet.clear(); //closedSet is the set of nodes already evaluated
+    openSet.clear(); //clear openset as we start a new search
 
 	openSet.push_back(&start); // push start to open set
 
@@ -112,7 +110,7 @@ vector<Vertex*> AStar::searchAStar(Vertex& start, Vertex& goal)
 		// and then find the total path and return it to robot
 		if (current->data == goal.data)
 		{
-			total_path.push_back(&start);
+			//total_path.push_back(&start);
 			//goal->path = cameFrom;
 			//goal->path = cameFrom;
 			total_path = getPath(&start, &goal);
@@ -165,6 +163,9 @@ vector<Vertex*> AStar::searchAStar(Vertex& start, Vertex& goal)
 
 		}
 	}
+
+    //todo return null if path cant be made?
+
     return total_path;
 }
 

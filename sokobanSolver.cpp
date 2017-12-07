@@ -10,7 +10,7 @@ sokobanSolver::sokobanSolver() = default;;
 vector<string> sokobanSolver::solve(Graph map) {
 
     //make openlist
-    queue<Step> openList;
+    list<Step> openList;
     list<Step> closedList;
     list<Step> solutionList;
 
@@ -49,7 +49,7 @@ vector<string> sokobanSolver::solve(Graph map) {
     firstStep.robotStartPosition = currentRoboPos;
     firstStep.parent = nullptr; //First step
     firstStep.diamonds = diamondPosIndex;
-    openList.push(firstStep);
+    openList.push_back(firstStep);
 
     //debug info
     int counter = 0;
@@ -64,12 +64,15 @@ vector<string> sokobanSolver::solve(Graph map) {
             counter = 0;
         }
 
-        //before popping next node sort list for heuristisk
-
+        //before popping next node sort list for heuristic
+        openList.sort([] (const Step & lhs, const Step & rhs) {
+            // < == ascending order(smallest first). > == descending order.
+            return lhs.distanceToClosestGoal < rhs.distanceToClosestGoal;
+        });
 
         //pop next node to go though
         Step nextStep = openList.front();
-        openList.pop();
+        openList.pop_front();
 
         //put currStep in closedlist
         closedList.push_back(nextStep);
@@ -107,6 +110,11 @@ vector<string> sokobanSolver::solve(Graph map) {
                 newStep.movePath = s.movePath;
                 newStep.robotStartPosition = currentRoboPos;
 
+                //get manhattan to closest goal & save it
+                Pixel goal = getClosestGoal(s.pushTo->data, goals);
+                int distanceClosestGoal = getHeuristics(s.pushTo->data, goal);
+                newStep.distanceToClosestGoal = distanceClosestGoal;
+
                 //+1 as we move from side and up to next pos with diamond
                 newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size() +1; //todo not counting correctly exactly
 
@@ -115,16 +123,16 @@ vector<string> sokobanSolver::solve(Graph map) {
                     continue;
 
                 //Check if move is end move. Is all diamonds on goals?
-                if (isWinStep(&newStep)) {
+                if (isWinStep(&newStep, goals)) {
                     //save solution in solutionList and set current shortest distance
                     if (newStep.robotTravelledLength < bestSolutionRobotMoves)
                         bestSolutionRobotMoves = newStep.robotTravelledLength;
                     //Todo consider just throwing bad solutions away...
-                    //Todo for now just save all solutions
+                    //Todo for now just save all solutions in closedlist
                     solutionList.push_back(newStep);
                 } else {
                     //add to openList
-                    openList.push(newStep);
+                    openList.push_back(newStep);
                 }
             }
         }
@@ -140,6 +148,23 @@ vector<string> sokobanSolver::solve(Graph map) {
     if (solutionList.empty())
     {
         cout << "Couldn't find a solution..." << endl;
+        cout << "closed List size: " << closedList.size() << endl;
+        for (const auto& s : closedList)
+        {
+            int count = 0;
+            for(const auto& d : s.diamonds)
+            {
+                if(d->data == Pixel(2,4) || d->data == Pixel(4,4) || d->data == Pixel(6,4) || d->data == Pixel(8,4))
+                    count++;
+            }
+
+            if (count < 2)
+                continue;
+
+            for(const auto& d : s.diamonds)
+                cout << "(" << d->data << "), ";
+            cout << endl;
+        }
     }
     else {
         //select best solution and backtrack to create solution for robot
@@ -148,10 +173,6 @@ vector<string> sokobanSolver::solve(Graph map) {
             // < == ascending order(smallest first). > == descending order.
             return lhs.robotTravelledLength < rhs.robotTravelledLength;
         });
-
-        //Best solution is then first element in vector[0]. (Check if that is true...)
-        //todo backtrack that solution
-
 
         //debug
         cout << endl << endl << "DIAMONDS:" << endl;
@@ -208,13 +229,13 @@ vector<string> sokobanSolver::getRobotPlan(Step &solution) {
         robDirection = targetDir;
 
         //push diamond one forward. (Pushing diamond one forward is indicated with "D" instead of "F")
-        plan.emplace_back("D");
+        plan.emplace_back("DDD");
     }
 
     //output size of solution
     int sokobanSteps = 0;
     for (const auto& s : plan)
-        if (s == "F" || s == "D")
+        if (s == "FFF" || s == "DDD")
             sokobanSteps++;
 
     cout << "Plan Sokoban Steps: " << sokobanSteps << endl;
@@ -244,7 +265,7 @@ vector<string> sokobanSolver::getRobotMovesFromPath(vector<Vertex *> path, strin
         startDir = targetDir;
 
         //add a forward as we now have right orientation and need to move one forward
-        pathList.emplace_back("F");
+        pathList.emplace_back("FFF");
     }
 
     return pathList;
@@ -284,7 +305,7 @@ vector<string> sokobanSolver::getRotateToDir(string targetDir, string startDir) 
     while (targetDir != currCW)
     {
         currCW = rotateDir(currCW, "CW");
-        rotationsCW.emplace_back("CW");
+        rotationsCW.emplace_back("CWW");
     }
 
     if(rotationsCCW.size() <= rotationsCW.size())
@@ -317,13 +338,13 @@ string sokobanSolver::rotateDir(string curr, string rot) {
     }
 }
 
-bool sokobanSolver::isWinStep(Step* step) {
-    //if no diamonds are on anything else than "goal" type we have a solution
-    for(auto& v : step->diamonds) {
-        if (v->pathType != GOAL)
-            return false;
-    }
-    return true;
+bool sokobanSolver::isWinStep(Step* step, vector<Vertex*> goals) {
+    //sort both vectors and see if they match
+    vector<Vertex*> diamonds = step->diamonds;
+    sort(diamonds.begin(), diamonds.end());
+    sort(goals.begin(), goals.end());
+
+    return diamonds == goals;
 }
 
 bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>>>& hashTable) {
@@ -387,6 +408,7 @@ vector<Vertex *> sokobanSolver::newDiamondList(vector<Vertex *> oldList, Vertex 
 
     //add new pos
     newList.push_back(newPos);
+
     return newList;
 }
 
@@ -401,6 +423,9 @@ void sokobanSolver::setMaptoSnapshot(Step& snapshot, Graph* map) {
     for (Vertex* v : snapshot.diamonds) {
         //TODO if I do this directly on v it doesn't save in map. Even though v should be a pointer to the vertex in map
         map->getNodesRef()[v->index].pathType = DIAMOND;
+
+        if(v->data == Pixel(8,4))
+            int debug = 0;
     }
 }
 
@@ -460,9 +485,14 @@ vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRo
             Pixel newPos = currPos.data + deltaP;
 
             Vertex* newPosV = currPos.findNeighbour(newPos);
-            if(newPosV != nullptr && newPosV->pathType != DIAMOND) {
+            //todo ref issue, so gotta get real ref to check pathtype
+            if (newPosV == nullptr)
+                continue;
+            //else get real node and check pathType
+            Vertex& newPosV_real = map.getNodesRef()[newPosV->index];
+            if(newPosV_real.pathType != DIAMOND) {
 
-                pushableSides.emplace_back(v, newPosV, path);
+                pushableSides.emplace_back(v, &newPosV_real, path);
             }
         }
     }
@@ -490,20 +520,20 @@ int sokobanSolver::getHeuristics(Pixel from, Pixel to)
     return (from.x + to.x) + (from.y + to.y);
 }
 
-Pixel sokobanSolver::getClosestDiamond(Pixel currPos, vector<Vertex*> diamonds)
+Pixel sokobanSolver::getClosestGoal(Pixel currPos, vector<Vertex *> goals)
 {
-    //calculate the manhattan for each diamond and return the pos of the closest diamond
+    //calculate the manhattan for each goal and return the pos of the closest goal
     int closest = INFINITY;
-    Pixel closestDiamond;
+    Pixel closestGoal;
 
-    for(auto d : diamonds)
+    for(auto d : goals)
     {
         int dist = getHeuristics(currPos, d->data);
 
         if(dist <= closest)
         {
             closest = dist;
-            closestDiamond = d->data;
+            closestGoal = d->data;
         }
     }
 }
