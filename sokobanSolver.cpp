@@ -65,10 +65,10 @@ vector<string> sokobanSolver::solve(Graph map) {
         }
 
         //before popping next node sort list for heuristic
-        openList.sort([] (const Step & lhs, const Step & rhs) {
-            // < == ascending order(smallest first). > == descending order.
-            return lhs.distanceToClosestGoal < rhs.distanceToClosestGoal;
-        });
+//        openList.sort([] (const Step & lhs, const Step & rhs) {
+//            // < == ascending order(smallest first). > == descending order.
+//            return lhs.distanceToClosestGoal < rhs.distanceToClosestGoal;
+//        });
 
         //pop next node to go though
         Step nextStep = openList.front();
@@ -120,7 +120,7 @@ vector<string> sokobanSolver::solve(Graph map) {
                 newStep.distanceToClosestGoal = distanceClosestGoal;
 
                 //+1 as we move from side and up to next pos with diamond
-                newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size() +1; //todo not counting correctly exactly
+                newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size(); //+1 todo not counting correctly exactly
 
                 //Already tried move? - check hashtable - If new it also saves in hashtable
                 if (!isMoveNew(&newStep, hashTable))
@@ -131,8 +131,7 @@ vector<string> sokobanSolver::solve(Graph map) {
                     //save solution in solutionList and set current shortest distance
                     if (newStep.robotTravelledLength < bestSolutionRobotMoves)
                         bestSolutionRobotMoves = newStep.robotTravelledLength;
-                    //Todo consider just throwing bad solutions away...
-                    //Todo for now just save all solutions in closedlist
+
                     solutionList.push_back(newStep);
                 } else {
                     //add to openList
@@ -145,14 +144,21 @@ vector<string> sokobanSolver::solve(Graph map) {
     cout << endl << "solution list" << endl;
     for (auto s : solutionList)
     {
-        cout << "diamond1:" << s.diamonds[0]->data << ", diamond2:" << s.diamonds[1]->data << endl;
+        for (const auto& d : s.diamonds)
+        {
+            cout << "diamond:" << d->data << ", ";
+        }
+        cout << endl;
+        cout << "Robot Travel Length: " << s.robotTravelledLength << endl;
     }
+
+
+    cout << "closed List size: " << closedList.size() << endl;
 
     //While is done, if solution exists it is in solutionVector
     if (solutionList.empty())
     {
         cout << "Couldn't find a solution..." << endl;
-        cout << "closed List size: " << closedList.size() << endl;
         for (const auto& s : closedList)
         {
             int count = 0;
@@ -191,7 +197,8 @@ vector<string> sokobanSolver::solve(Graph map) {
 
 vector<string> sokobanSolver::getRobotPlan(Step &solution) {
     vector<string> plan;
-    string robDirection = "N";
+    vector<string> planDebug;
+    string robDirection = "N"; //todo Set depending on what is best
 
     vector<Step> solutionActions;
     while (true)
@@ -211,7 +218,7 @@ vector<string> sokobanSolver::getRobotPlan(Step &solution) {
     for(auto& st : solutionActions)
     {
         //get moves from current position of robot to position before pushing diamond
-        vector<string> movePath = getRobotMovesFromPath(st.movePath, robDirection);
+        vector<string> movePath = getRobotMovesFromPath(st.movePath, robDirection, planDebug);
         //push back on plan
         for(const auto& p : movePath)
             plan.push_back(p);
@@ -224,6 +231,8 @@ vector<string> sokobanSolver::getRobotPlan(Step &solution) {
             delta = st.finishedRoboPos->data - st.movePath.back()->data;
 
         string targetDir = dirToNextPoint(delta);
+        planDebug.push_back(targetDir);
+
         vector<string> rotToTarget = getRotateToDir(targetDir, robDirection);
 
         for(const auto& rot : rotToTarget)
@@ -236,18 +245,25 @@ vector<string> sokobanSolver::getRobotPlan(Step &solution) {
         plan.emplace_back("DDD");
     }
 
-    //output size of solution
-    int sokobanSteps = 0;
-    for (const auto& s : plan)
-        if (s == "FFF" || s == "DDD")
-            sokobanSteps++;
+//    //output size of solution
+//    int sokobanSteps = 0;
+//    for (const auto& s : plan)
+//        if (s == "FFF" || s == "DDD" || s == "BBB")
+//            sokobanSteps++;
 
-    cout << "Plan Sokoban Steps: " << sokobanSteps << endl;
+    cout << "Plan Sokoban Steps: " << plan.size() << endl;
+
+    cout << "debug Plan" << endl;
+    for(const auto& p : planDebug)
+    {
+        cout << p << ", ";
+    }
+    cout << endl;
 
     return plan;
 }
 
-vector<string> sokobanSolver::getRobotMovesFromPath(vector<Vertex *> path, string& startDir) {
+vector<string> sokobanSolver::getRobotMovesFromPath(vector<Vertex *> path, string& startDir, vector<string>& debugPath) {
     vector<string> pathList;
 
     //null check - As in now needing to move before pushing diamond
@@ -260,6 +276,9 @@ vector<string> sokobanSolver::getRobotMovesFromPath(vector<Vertex *> path, strin
         Pixel delta = path[i+1]->data - path[i]->data;
         string targetDir = dirToNextPoint(delta);
 
+        //todo debug
+        debugPath.push_back(targetDir);
+
         //get rotations to turn around in right direction
         vector<string> rotations = getRotateToDir(targetDir, startDir);
             for (const auto& rot : rotations)
@@ -269,7 +288,8 @@ vector<string> sokobanSolver::getRobotMovesFromPath(vector<Vertex *> path, strin
         startDir = targetDir;
 
         //add a forward as we now have right orientation and need to move one forward
-        pathList.emplace_back("FFF");
+        if (rotations.size() == 0)
+            pathList.emplace_back("FFF");
     }
 
     return pathList;
@@ -312,7 +332,13 @@ vector<string> sokobanSolver::getRotateToDir(string targetDir, string startDir) 
         rotationsCW.emplace_back("CWW");
     }
 
-    if(rotationsCCW.size() <= rotationsCW.size())
+    if (rotationsCCW.size() == rotationsCW.size() && rotationsCCW.size() != 0)
+    {
+        //if turn 2 times around give BBB instead of double turns
+        vector<string> turnAround = {"BBB"};
+        return turnAround;
+    }
+    else if(rotationsCCW.size() < rotationsCW.size())
         return rotationsCCW;
     else
         return rotationsCW;
@@ -427,9 +453,6 @@ void sokobanSolver::setMaptoSnapshot(Step& snapshot, Graph* map) {
     for (Vertex* v : snapshot.diamonds) {
         //TODO if I do this directly on v it doesn't save in map. Even though v should be a pointer to the vertex in map
         map->getNodesRef()[v->index].pathType = DIAMOND;
-
-        if(v->data == Pixel(8,4))
-            int debug = 0;
     }
 }
 
@@ -442,6 +465,10 @@ bool sokobanSolver::isDeadlock(Vertex* newPos) {
 
     //never deadlock when target is a goal
     if (newPos->pathType == GOAL)
+        return false;
+
+    //debug todo hardcoded for competition map 5,4, 8,4
+    if (newPos->data == Pixel(8,4))
         return false;
 
     //CASE TOP_LEFT
@@ -488,10 +515,12 @@ vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRo
             Pixel deltaP = currPos.data - v->data;
             Pixel newPos = currPos.data + deltaP;
 
-            Vertex* newPosV = currPos.findNeighbour(newPos);
+            //Vertex* newPosV = currPos.findNeighbour(newPos);
+            Vertex* newPosV = &map.findNode(newPos);
             //todo ref issue, so gotta get real ref to check pathtype
             if (newPosV == nullptr)
                 continue;
+
             //else get real node and check pathType
             Vertex& newPosV_real = map.getNodesRef()[newPosV->index];
             if(newPosV_real.pathType != DIAMOND) {
@@ -515,7 +544,7 @@ void sokobanSolver::initHashFunction(int size) {
     srand (time(NULL));
     hashMap.resize(size);
     for(int i = 0; i < size; i++) {
-        hashMap[i] = rand();
+        hashMap[i] = rand(); //100 + 3*i + 5*i;
     }
 }
 

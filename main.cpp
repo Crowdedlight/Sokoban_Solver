@@ -20,7 +20,7 @@ int main() {
     cout << "Robot Plan:" << endl;
     for(const auto& p : plan)
     {
-        cout << p << ",";
+        cout << p ;//<< ",";
     }
     cout << endl;
     

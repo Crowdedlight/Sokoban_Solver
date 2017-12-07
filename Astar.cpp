@@ -1,5 +1,5 @@
-#include "AStar.h"
 #include "graph.h"
+#include "Astar.h"
 
 
 AStar::AStar() {}
@@ -110,7 +110,7 @@ vector<Vertex*> AStar::searchAStar(Vertex& start, Vertex& goal)
 		// and then find the total path and return it to robot
 		if (current->data == goal.data)
 		{
-			//total_path.push_back(&start);
+			total_path.push_back(&start); //todo, does it make a difference? yes
 			//goal->path = cameFrom;
 			//goal->path = cameFrom;
 			total_path = getPath(&start, &goal);
@@ -163,9 +163,6 @@ vector<Vertex*> AStar::searchAStar(Vertex& start, Vertex& goal)
 
 		}
 	}
-
-    //todo return null if path cant be made?
-
     return total_path;
 }
 

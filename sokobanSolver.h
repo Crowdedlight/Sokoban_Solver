@@ -48,6 +48,7 @@ public:
 private:
     AStar aStar;
     vector<int> hashMap;
+    vector<Pixel> deadlocks;
 
     void initHashFunction(int size);
     int getHashKey(vector<Vertex*> diamonds);
@@ -58,12 +59,13 @@ private:
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);
     vector<int> getDiamondsIndex(vector<Vertex * > diamonds);
     vector<string> getRobotPlan(Step & solution);
-    vector<string> getRobotMovesFromPath(vector<Vertex*> path, string& startDir);
+    vector<string> getRobotMovesFromPath(vector<Vertex*> path, string& startDir, vector<string>& debugPath);
     vector<string> getRotateToDir(string targetDir, string startDir);
     string rotateDir(string curr, string rot);
     string dirToNextPoint(Pixel delta);
 
     void setMaptoSnapshot(Step& snapshot, Graph* map);
+    void initMapDeadlocks(Graph* map);
 
     bool isDeadlock(Vertex * newPos);
     bool isBlocked(Vertex * v);
