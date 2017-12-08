@@ -1,0 +1,12 @@
+17 11 02
+XXXXXXXXXXXXXXXXX
+XXX....XXX....XXX
+X...............X
+X..XX.......XX..X
+X...XXXX.XXXX...X
+XX...XX.GMXX...XX
+XXXX..XXXXX..X.XX
+XX..X..XXX..X..XX
+XX.JX...X...X.JXX
+XX......G...X..XX
+XXXXXXXXXXXXXXXXX

@@ -72,6 +72,7 @@ private:
     int getHashKey(Move move);
     int getHeuristics(Pixel from, Pixel to);
     Pixel getClosestGoal(Pixel currPos, vector<Vertex *> goals);
+    Pixel getClosestGoalWithNoDiamond(Pixel currPos, vector<Vertex *> goals, Graph& map);
 
     vector<SidePush> getPushableSides(Vertex & currPos, Vertex & currRoboPos, Graph& map);
     vector<Vertex *> newDiamondList(vector<Vertex*> oldList, Vertex* oldPos, Vertex* newPos);

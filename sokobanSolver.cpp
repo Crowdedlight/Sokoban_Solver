@@ -121,10 +121,19 @@ vector<string> sokobanSolver::solve(Map& map) {
                 newStep.movePath = s.movePath;
                 newStep.robotStartPosition = currentRoboPos;
 
-                //get manhattan to closest goal & save it
-                Pixel goal = getClosestGoal(s.pushTo->data, goals);
+                //get manhattan to closest goal & save it. Combining into heuristic of average length
+                Pixel goal = getClosestGoalWithNoDiamond(s.pushTo->data, goals, *map.getMapGraph());
                 int distanceClosestGoal = getHeuristics(s.pushTo->data, goal);
-                newStep.distanceToClosestGoal = distanceClosestGoal;
+                for(auto& d : newStep.diamonds)
+                {
+                    //don't include the moved diamond again
+                    if(d->data == s.pushFrom->data)
+                        continue;
+
+                    goal = getClosestGoalWithNoDiamond(d->data, goals, *map.getMapGraph());
+                    distanceClosestGoal += getHeuristics(s.pushTo->data, goal);
+                }
+                newStep.distanceToClosestGoal = distanceClosestGoal/newStep.diamonds.size();
 
                 //+1 as we move from side and up to next pos with diamond
                 newStep.robotTravelledLength = currStep.robotTravelledLength + s.movePath.size(); //+1 todo not counting correctly exactly
@@ -259,6 +268,11 @@ void sokobanSolver::initMapDeadlocks(Map &map, int width, int height) {
                     tempDeadlocks.clear();
                     deadStart = false;
                 }
+            } else if (above.pathType != WALL && below.pathType != WALL && deadStart)
+            {
+                //don't deadlock as we got a opening
+                tempDeadlocks.clear();
+                deadStart = false;
             }
         }
 
@@ -718,4 +732,29 @@ Pixel sokobanSolver::getClosestGoal(Pixel currPos, vector<Vertex *> goals)
             closestGoal = d->data;
         }
     }
+    return closestGoal;
+}
+
+Pixel sokobanSolver::getClosestGoalWithNoDiamond(Pixel currPos, vector<Vertex *> goals, Graph& map)
+{
+    //calculate the manhattan for each goal and return the pos of the closest goal
+    auto closest = INFINITY;
+    Pixel closestGoal;
+
+    for(auto d : goals)
+    {
+
+        int dist = getHeuristics(currPos, d->data);
+
+        Vertex& pos = map.findNode(d->data);
+        if (pos.pathType == DIAMOND && dist != 0)
+            continue;
+
+        if(dist <= closest)
+        {
+            closest = dist;
+            closestGoal = d->data;
+        }
+    }
+    return closestGoal;
 }

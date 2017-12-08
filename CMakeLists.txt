@@ -11,3 +11,6 @@ file(GLOB SOURCES
         )
 
 add_executable(Sokoban_solver ${SOURCE_FILES} ${SOURCES})
+
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static")

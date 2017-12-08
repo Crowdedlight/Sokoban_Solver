@@ -170,7 +170,7 @@ int Map::getTotalDiamonds()
 void Map::plotMap()
 {
     //create image
-    Image* plot = new Image(this->getWidth()*mapScale, this->getHeight()*mapScale, Image::RGB, Image::Depth8U);
+    auto* plot = new Image(this->getWidth()*mapScale, this->getHeight()*mapScale, Image::RGB, Image::Depth8U);
 
     //draw entire image black
     for (int x = 0; x < plot->getWidth(); x++) {
