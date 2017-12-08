@@ -162,24 +162,33 @@ vector<string> sokobanSolver::solve(Map& map) {
         }
     }
 
+    ofstream out;
+    out.open("../output_path/outPlanDebug.txt");
+
     cout << endl << "solution list" << endl;
+    out << endl << "solution list" << endl;
     for (auto s : solutionList)
     {
         for (const auto& d : s.diamonds)
         {
             cout << "diamond:" << d->data << ", ";
+            out << "diamond:" << d->data << ", ";
         }
         cout << endl;
+        out << endl;
         cout << "Robot Travel Length: " << s.robotTravelledLength << endl;
+        out << "Robot Travel Length: " << s.robotTravelledLength << endl;
     }
 
 
     cout << "closed List size: " << closedList.size() << endl;
+    out << "closed List size: " << closedList.size() << endl;
 
     //While is done, if solution exists it is in solutionVector
     if (solutionList.empty())
     {
         cout << "Couldn't find a solution..." << endl;
+        out << "Couldn't find a solution..." << endl;
         for (const auto& s : closedList)
         {
             int count = 0;
@@ -193,8 +202,12 @@ vector<string> sokobanSolver::solve(Map& map) {
                 continue;
 
             for(const auto& d : s.diamonds)
+            {
                 cout << "(" << d->data << "), ";
+                out << "(" << d->data << "), ";
+            }
             cout << endl;
+            out << endl;
         }
     }
     else {
@@ -207,12 +220,16 @@ vector<string> sokobanSolver::solve(Map& map) {
 
         //debug
         cout << endl << endl << "DIAMONDS:" << endl;
+        out << endl << endl << "DIAMONDS:" << endl;
         for (auto v : solutionList.front().diamonds) {
             cout << v->data << endl;
+            out << v->data << endl;
         }
         cout << "Total Robot length: " << solutionList.front().robotTravelledLength << endl;
+        out << "Total Robot length: " << solutionList.front().robotTravelledLength << endl;
     }
-
+    out.close();
+    
     return getRobotPlan(solutionList.front());
 }
 

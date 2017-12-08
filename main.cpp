@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "Map.h"
 #include "sokobanSolver.h"
 
@@ -17,12 +18,17 @@ int main() {
     //try solve
     vector<string> plan = solver.solve(map);
 
+    ofstream out;
+    out.open("../output_path/outPlan.txt");
     cout << "Robot Plan:" << endl;
+    out << "Robot Plan:" << endl;
     for(const auto& p : plan)
     {
         cout << p ;//<< ",";
+        out << p ;//<< ",";
     }
     cout << endl;
-    
+    out << endl;
+    out.close();
     system("pause");
 }
