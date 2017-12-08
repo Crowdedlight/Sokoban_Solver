@@ -7,7 +7,10 @@
 
 sokobanSolver::sokobanSolver() = default;;
 
-vector<string> sokobanSolver::solve(Graph map) {
+vector<string> sokobanSolver::solve(Map& map) {
+
+    //get graph
+    Graph& graph = *map.getMapGraph();
 
     //make openlist
     list<Step> openList;
@@ -15,20 +18,20 @@ vector<string> sokobanSolver::solve(Graph map) {
     list<Step> solutionList;
 
     //make hashtable and hashfunction
-    unordered_map<int, vector<vector<int>>> hashTable;
-    initHashFunction(map.getSize());
+    unordered_map<int, vector<Move>> hashTable;
+    initHashFunction(graph.getSize());
 
     //init current robot pos
     Vertex* currentRoboPos;
 
     //make Astar ready for map
-    aStar = AStar(map);
+    aStar = AStar(graph);
 
     //best solution move number
-    int bestSolutionRobotMoves = INFINITY;
+    auto bestSolutionRobotMoves = INFINITY;
 
     //find diamond position and add to openlist && add robot current pos to currentRobotPos
-    vector<Vertex>& nodes = map.getNodesRef();
+    vector<Vertex>& nodes = graph.getNodesRef();
     vector<Vertex *> diamondPosIndex;
     vector<Vertex *> goals;
     for(Vertex & node : nodes ) {
@@ -43,6 +46,9 @@ vector<string> sokobanSolver::solve(Graph map) {
         }
     }
 
+    //init deadlocks
+    initMapDeadlocks(map, map.getWidth(), map.getHeight());
+
     //save first step
     Step firstStep;
     firstStep.finishedRoboPos = currentRoboPos;
@@ -53,6 +59,7 @@ vector<string> sokobanSolver::solve(Graph map) {
 
     //debug info
     int counter = 0;
+    int bestDistanceToDimond = INFINITY;
 
     //MAIN LOOP
     while (!openList.empty()) {
@@ -86,7 +93,7 @@ vector<string> sokobanSolver::solve(Graph map) {
 
         //set graph to diamond positions if we are not at root
         if (currStep.parent != nullptr)
-            setMaptoSnapshot(currStep, &map);
+            setMaptoSnapshot(currStep, &graph);
 
         //set robot pos
         currentRoboPos = currStep.finishedRoboPos;
@@ -95,10 +102,10 @@ vector<string> sokobanSolver::solve(Graph map) {
         for (Vertex* curr : currStep.diamonds)
         {
             //todo again.. the reference issues
-            Vertex & curr_real = map.getNodesRef()[curr->index];
+            Vertex & curr_real = graph.getNodesRef()[curr->index];
 
             //What sides can robot go to and push
-            vector<SidePush> sides = getPushableSides(curr_real, *currentRoboPos, map);
+            vector<SidePush> sides = getPushableSides(curr_real, *currentRoboPos, graph);
 
             //for pushable sides check if newStep is deadlock
             for (auto s : sides) {
@@ -134,8 +141,13 @@ vector<string> sokobanSolver::solve(Graph map) {
 
                     solutionList.push_back(newStep);
                 } else {
-                    //add to openList
-                    openList.push_back(newStep);
+                    //add to openList. Add to front if we get closer than what we was before
+//                    if (newStep.distanceToClosestGoal < bestDistanceToDimond)
+//                    {
+//                        bestDistanceToDimond = newStep.distanceToClosestGoal;
+//                        openList.push_front(newStep);
+//                    }else
+                        openList.push_back(newStep);
                 }
             }
         }
@@ -193,6 +205,168 @@ vector<string> sokobanSolver::solve(Graph map) {
     }
 
     return getRobotPlan(solutionList.front());
+}
+
+void sokobanSolver::initMapDeadlocks(Map &map, int width, int height) {
+
+    Graph& graph =  *map.getMapGraph();
+    //check map from left to right, up to down
+    //first check rows, if a row touches top or bottom and no goals then they are all deadlocks
+
+    //go though rows
+    for(int i = 0; i < height; i++ )
+    {
+        vector<Pixel> tempDeadlocks;
+        bool deadStart = false;
+
+        for(int j = 0; j < width; j++)
+        {
+
+            Vertex* pos = graph.findNodePointer(Pixel(j,i));
+            Vertex* prevPos = graph.findNodePointer(Pixel(j-1,i));
+
+            if (pos == nullptr || prevPos == nullptr) //doesn't exists
+                continue;
+
+            //get above and below
+            Vertex& above = graph.findNode(Pixel(j,i-1));
+            Vertex& below = graph.findNode(Pixel(j,i+1));
+
+            //check if touching walls
+            if(above.pathType == WALL || below.pathType == WALL)
+            {
+                if(pos->pathType == ROAD && prevPos->pathType == WALL)
+                {
+                    //start deadzone
+                    deadStart = true;
+                    //save this pos
+                    tempDeadlocks.emplace_back(pos->data);
+                } else if (pos->pathType == ROAD && deadStart)
+                {
+                    //another point in temp
+                    tempDeadlocks.emplace_back(pos->data);
+                } else if (pos->pathType == GOAL || pos->pathType == DIAMOND)
+                {
+                    //reset
+                    tempDeadlocks.clear();
+                    deadStart = false;
+                } else if (pos->pathType == WALL && deadStart)
+                {
+                    //save over
+                    for(auto d : tempDeadlocks)
+                        deadlocks.emplace_back(d);
+
+                    tempDeadlocks.clear();
+                    deadStart = false;
+                }
+            }
+        }
+
+        //push deadlock vector
+        if (!tempDeadlocks.empty())
+        {
+            for(const auto& d : tempDeadlocks)
+                this->deadlocks.emplace_back(d);
+            tempDeadlocks.clear();
+        }
+    }
+
+
+    //go though coloums
+    for(int col = 0; col < width; col++ )
+    {
+        vector<Pixel> tempDeadlocks;
+        bool deadStart = false;
+
+        for(int row = 0; row < height; row++)
+        {
+
+            Vertex* pos = graph.findNodePointer(Pixel(col,row));
+            Vertex* prevPos = graph.findNodePointer(Pixel(col,row-1));
+
+            if (pos == nullptr || prevPos == nullptr) //doesn't exists
+                continue;
+
+            //get above and below
+            Vertex& before = graph.findNode(Pixel(col-1,row));
+            Vertex& after = graph.findNode(Pixel(col+1,row));
+
+            //check if touching walls
+            if(before.pathType == WALL || after.pathType == WALL)
+            {
+                if(pos->pathType == ROAD && prevPos->pathType == WALL)
+                {
+                    //start deadzone
+                    deadStart = true;
+                    //save this pos
+                    tempDeadlocks.emplace_back(pos->data);
+                } else if (pos->pathType == ROAD && deadStart)
+                {
+                    //another point in temp
+                    tempDeadlocks.emplace_back(pos->data);
+                } else if (pos->pathType == GOAL || pos->pathType == DIAMOND)
+                {
+                    //reset
+                    tempDeadlocks.clear();
+                    deadStart = false;
+                } else if (pos->pathType == WALL && deadStart)
+                {
+                    //save over
+                    for(auto d : tempDeadlocks)
+                        deadlocks.emplace_back(d);
+
+                    tempDeadlocks.clear();
+                    deadStart = false;
+                }
+            }
+        }
+
+        //push deadlock vector
+        if (!tempDeadlocks.empty())
+        {
+            for(const auto& d : tempDeadlocks)
+                this->deadlocks.emplace_back(d);
+            tempDeadlocks.clear();
+        }
+    }
+
+    //find corners
+    for(int i = 0; i < height; i++ )
+    {
+        for(int j = 0; j < width; j++)
+        {
+            Vertex* pos = graph.findNodePointer(Pixel(j,i));
+
+            if (pos == nullptr || pos->pathType == GOAL || pos->pathType == WALL || pos->pathType == DIAMOND) //doesn't exists
+                continue;
+
+            //get above and below
+            Vertex& up = graph.findNode(Pixel(j,i-1));
+            Vertex& down = graph.findNode(Pixel(j,i+1));
+            Vertex& left = graph.findNode(Pixel(j-1,i));
+            Vertex& right = graph.findNode(Pixel(j+1,i));
+
+            //CASE TOP_LEFT
+            if (isBlocked(up) && isBlocked(left))
+                deadlocks.emplace_back(pos->data);
+            //CASE TOP_RIGHT
+            if (isBlocked(up) && isBlocked(right))
+                deadlocks.emplace_back(pos->data);
+            //CASE BOT_LEFT
+            if (isBlocked(down) && isBlocked(left))
+                deadlocks.emplace_back(pos->data);
+            //CASE BOT_RIGHT
+            if (isBlocked(down) && isBlocked(right))
+                deadlocks.emplace_back(pos->data);
+        }
+    }
+
+    //plot deadlocks for visual aid
+    map.plotDeadlocks(deadlocks);
+}
+
+bool sokobanSolver::isBlocked(Vertex & v) {
+    return v.pathType == WALL;
 }
 
 vector<string> sokobanSolver::getRobotPlan(Step &solution) {
@@ -377,36 +551,46 @@ bool sokobanSolver::isWinStep(Step* step, vector<Vertex*> goals) {
     return diamonds == goals;
 }
 
-bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<vector<int>>>& hashTable) {
-    //get hashkey
-    int hashkey = getHashKey(step->diamonds);
-    vector<int> newPos = getDiamondsIndex(step->diamonds);
+bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<Move>>& hashTable) {
+    //new Move
+    Move mov;
+    vector<int> diamonds = getDiamondsIndex(step->diamonds);
+    //always sort diamonds to be able to compare
+    sort(diamonds.begin(), diamonds.end());
 
-    //add robotPos to vector
-    newPos.push_back(step->finishedRoboPos->index);
+    mov.diamonds = diamonds;
+    mov.robopos = step->finishedRoboPos->index;
+    mov.length = step->robotTravelledLength;
+
+    //get hashkey
+    int hashkey = getHashKey(mov);
 
     //exists in table?
-    auto& debug = hashTable[hashkey];
     if (hashTable[hashkey].empty()) {
         //key doesn't exists, move is new and is first move on this pos
-        vector<vector<int>> newEntry;
-        newEntry.push_back(newPos);
-        hashTable[hashkey] =  newEntry;
+        vector<Move> newEntry;
+        newEntry.push_back(mov);
+        hashTable[hashkey] = newEntry;
         return true;
     }
     else {
         //check if pos for diamonds is the same
-        const vector<vector<int>>& existingPos = hashTable[hashkey];
+        const vector<Move>& existingPos = hashTable[hashkey];
 
-        for(const auto &pos : existingPos)
+//        int sizeB = hashTable.bucket(hashkey);
+//        int collision = hashTable.bucket_size(sizeB);
+//        if (collision > 4)
+//            cout << collision << endl;
+
+        for(const auto &move : existingPos)
         {
             //if equal move is not new. Also checks for robo pos
-            if (isDiamondPosEqual(pos, newPos))
+            if (move == mov)
                 return false;
         }
 
         //if passed all values and is still unmatched, then insert new pos & return true;
-        hashTable[hashkey].push_back(newPos);
+        hashTable[hashkey].push_back(mov);
         return true;
     }
 }
@@ -416,14 +600,6 @@ vector<int> sokobanSolver::getDiamondsIndex(vector<Vertex *> diamonds) {
     for (auto& v : diamonds)
         list.push_back(v->index);
     return list;
-}
-
-bool sokobanSolver::isDiamondPosEqual(vector<int> d1, vector<int> d2) {
-    for(auto& v : d1) {
-        if (find(d2.begin(), d2.end(), v) == d2.end())
-            return false;
-    }
-    return true;
 }
 
 vector<Vertex *> sokobanSolver::newDiamondList(vector<Vertex *> oldList, Vertex *oldPos, Vertex *newPos) {
@@ -457,39 +633,8 @@ void sokobanSolver::setMaptoSnapshot(Step& snapshot, Graph* map) {
 }
 
 bool sokobanSolver::isDeadlock(Vertex* newPos) {
-    //check if pos is deadlock. If two sides is blocked it is in deadlock
-    Vertex * top = newPos->findNeighbour(newPos->data+Pixel(0,-1));
-    Vertex * left = newPos->findNeighbour(newPos->data+Pixel(-1,0));
-    Vertex * right = newPos->findNeighbour(newPos->data+Pixel(+1,0));
-    Vertex * bottom = newPos->findNeighbour(newPos->data+Pixel(0,+1));
-
-    //never deadlock when target is a goal
-    if (newPos->pathType == GOAL)
-        return false;
-
-    //debug todo hardcoded for competition map 5,4, 8,4
-    if (newPos->data == Pixel(8,4))
-        return false;
-
-    //CASE TOP_LEFT
-    if (isBlocked(top) && isBlocked(left))
-        return true;
-    //CASE TOP_RIGHT
-    if (isBlocked(top) && isBlocked(right))
-        return true;
-    //CASE BOT_LEFT
-    if (isBlocked(bottom) && isBlocked(left))
-        return true;
-    //CASE BOT_RIGHT
-    if (isBlocked(bottom) && isBlocked(right))
-        return true;
-
-    //if all has been zero return false
-    return false;
-}
-
-bool sokobanSolver::isBlocked(Vertex * v) {
-    return v == nullptr || v->pathType == WALL; //TODO can we make deadlock with neighbour diamonds? We could have cases where we got temp deadlock but then move the one diamond and result the deadlock || v->pathType == DIAMOND;
+    //check if pos is deadlock.
+    return find(deadlocks.begin(), deadlocks.end(), newPos->data) != deadlocks.end();
 }
 
 vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRoboPos, Graph& map) {
@@ -532,11 +677,15 @@ vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRo
     return pushableSides;
 }
 
-int sokobanSolver::getHashKey(vector<Vertex *> diamonds) {
+int sokobanSolver::getHashKey(Move move) {
+
+    //hashkey is currently diamond indexes + robopos index
     int hashKey = 0;
-    for(auto v : diamonds) {
-        hashKey += hashMap[v->index];
+    for(auto v : move.diamonds) {
+        hashKey += hashMap[v];
     }
+    hashKey += hashMap[move.robopos];
+
     return hashKey;
 }
 
@@ -544,7 +693,7 @@ void sokobanSolver::initHashFunction(int size) {
     srand (time(NULL));
     hashMap.resize(size);
     for(int i = 0; i < size; i++) {
-        hashMap[i] = rand(); //100 + 3*i + 5*i;
+        hashMap[i] = rand()%(10000-10 + 1) + 10;
     }
 }
 
@@ -556,7 +705,7 @@ int sokobanSolver::getHeuristics(Pixel from, Pixel to)
 Pixel sokobanSolver::getClosestGoal(Pixel currPos, vector<Vertex *> goals)
 {
     //calculate the manhattan for each goal and return the pos of the closest goal
-    int closest = INFINITY;
+    auto closest = INFINITY;
     Pixel closestGoal;
 
     for(auto d : goals)

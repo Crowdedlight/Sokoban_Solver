@@ -83,6 +83,7 @@ struct Vertex
     }
 
     Vertex(Pixel pixel, PathType type, int index) : data(pixel), visited(false), pathType(type), index(index) {};
+    Vertex() = default;
 };
 
 
@@ -96,6 +97,7 @@ public:
     void addNode(Vertex v);
     void addEdge(Vertex& parent, Vertex& v, int weight);
     Vertex& findNode(Pixel data);
+    Vertex* findNodePointer(Pixel pos);
 
     vector<Vertex>* getNodesPointer();
     vector<Vertex>& getNodesRef();

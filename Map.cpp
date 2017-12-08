@@ -90,7 +90,7 @@ void Map::LoadMap(string filename)
 
     //go though each node in map and add adj
     vector<Vertex>& allNodes = mapGraph.getNodesRef();
-    for (int k = 0; k < allNodes.size(); k++)
+    for(int k = 0; k < allNodes.size(); k++)
     {
         //4 cases, up, down, left and right.
         vector<Pixel> cases = {Pixel(-1,0), Pixel(0,-1), Pixel(1,0), Pixel(0,1)};
@@ -111,6 +111,32 @@ void Map::LoadMap(string filename)
             if (adjV.pathType != WALL && allNodes[k].pathType != WALL) {
                 mapGraph.addEdge(allNodes[k], adjV, 1);
             }
+        }
+    }
+}
+
+void Map::plotDeadlocks(vector<Pixel>& deadlocks) {
+
+    mapPlotDeadlocks = mapPlot->copyFlip(false, false);
+    vector<uint8_t> color = {250, 0, 0};
+
+    for(const auto d : deadlocks)
+    {
+        drawSquare(*mapPlotDeadlocks, d, color);
+    }
+
+    //save plot as file
+    mapPlotDeadlocks->saveAsPPM("../outputImages/map_deadlocks.ppm");
+}
+
+void Map::drawSquare(Image &img, Pixel pos, vector<uint8_t> rgb) {
+    int x_curr = (pos.x*mapScale);
+    int y_curr = (pos.y*mapScale);
+
+    //draw entire "pixel area"
+    for (int x = x_curr; x < x_curr+mapScale; x++) {
+        for (int y = y_curr; y < y_curr+mapScale; y++) {
+            img.setPixel8U(x, y, rgb[0], rgb[1], rgb[2]);
         }
     }
 }
@@ -144,12 +170,12 @@ int Map::getTotalDiamonds()
 void Map::plotMap()
 {
     //create image
-    Image plot(this->getWidth()*mapScale, this->getHeight()*mapScale, Image::RGB, Image::Depth8U);
+    Image* plot = new Image(this->getWidth()*mapScale, this->getHeight()*mapScale, Image::RGB, Image::Depth8U);
 
     //draw entire image black
-    for (int x = 0; x < plot.getWidth(); x++) {
-        for (int y = 0; y < plot.getHeight(); y++) {
-            plot.setPixel8U(x,y,0,0,0);
+    for (int x = 0; x < plot->getWidth(); x++) {
+        for (int y = 0; y < plot->getHeight(); y++) {
+            plot->setPixel8U(x,y,0,0,0);
         }
     }
 
@@ -160,19 +186,19 @@ void Map::plotMap()
         case WALL: //BLACK
             break;
         case DIAMOND: //BLUE
-            drawCross(plot, node);
-            drawCircle(plot, node, {0,0,255}, objectScale);
+            drawCross(*plot, node);
+            drawCircle(*plot, node, {0,0,255}, objectScale);
             break;
         case GOAL: //GREEN
-            drawCross(plot, node);
-            drawCircle(plot, node, {0,255,0}, objectScale);
+            drawCross(*plot, node);
+            drawCircle(*plot, node, {0,255,0}, objectScale);
             break;
         case ROAD: //Grey with black cross
-            drawCross(plot, node);
+            drawCross(*plot, node);
             break;
         case START: //START - Robot
-            drawCross(plot, node);
-            drawCircle(plot, node, {255,0,0}, robotScale);
+            drawCross(*plot, node);
+            drawCircle(*plot, node, {255,0,0}, robotScale);
             break;
         default: //NOTHING
             break;
@@ -180,7 +206,8 @@ void Map::plotMap()
     }
 
     //save plot as file
-    plot.saveAsPPM("../outputImages/map.ppm");
+    mapPlot = plot;
+    mapPlot->saveAsPPM("../outputImages/map.ppm");
 }
 
 void Map::drawCross(Image &img, Vertex &pos)
