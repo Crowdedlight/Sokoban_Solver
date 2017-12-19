@@ -9,7 +9,7 @@ int main() {
     
     //make Map object
     //Map map("../inputMaps/2017-competation-map");
-    Map map("../inputMaps/Sokoban2");
+    Map map("../inputMaps/Sokoban5");
 
     map.plotMap();
 

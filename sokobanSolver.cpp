@@ -28,7 +28,7 @@ vector<string> sokobanSolver::solve(Map& map) {
     aStar = AStar(graph);
 
     //best solution move number
-    auto bestSolutionRobotMoves = INFINITY;
+    auto bestSolutionRobotMoves = 150;
 
     //find diamond position and add to openlist && add robot current pos to currentRobotPos
     vector<Vertex>& nodes = graph.getNodesRef();
@@ -106,8 +106,23 @@ vector<string> sokobanSolver::solve(Map& map) {
             //todo again.. the reference issues
             Vertex & curr_real = graph.getNodesRef()[curr->index];
 
+            //get last moved diamond
+            Pixel lastMovedDiamond = Pixel(-5,-5);
+            if (currStep.parent != nullptr)
+                for(const auto& cd : currStep.diamonds)
+                {
+                    bool found = false;
+                    for (const auto& d : currStep.parent->diamonds)
+                    {
+                        if (d->data == cd->data)
+                            found = true;
+                    }
+                    if (!found)
+                        lastMovedDiamond = cd->data;
+                }
+
             //What sides can robot go to and push
-            vector<SidePush> sides = getPushableSides(curr_real, *currentRoboPos, graph);
+            vector<SidePush> sides = getPushableSides(curr_real, *currentRoboPos, graph, lastMovedDiamond);
 
             //for pushable sides check if newStep is deadlock
             for (auto s : sides) {
@@ -142,6 +157,9 @@ vector<string> sokobanSolver::solve(Map& map) {
 
                 //Already tried move? - check hashtable - If new it also saves in hashtable
                 if (!isMoveNew(&newStep, hashTable))
+                    continue;
+
+                if (newStep.robotTravelledLength > bestSolutionRobotMoves)
                     continue;
 
                 //Check if move is end move. Is all diamonds on goals?
@@ -423,6 +441,8 @@ vector<string> sokobanSolver::getRobotPlan(Step &solution) {
         solution = *solution.parent;
     }
 
+    cout << "Solution Depth: " << solutionActions.size() << endl;
+
     //go though vector of steps and write out path for robot
     for(auto& st : solutionActions)
     {
@@ -454,13 +474,7 @@ vector<string> sokobanSolver::getRobotPlan(Step &solution) {
         plan.emplace_back("DDD");
     }
 
-//    //output size of solution
-//    int sokobanSteps = 0;
-//    for (const auto& s : plan)
-//        if (s == "FFF" || s == "DDD" || s == "BBB")
-//            sokobanSteps++;
-
-    cout << "Plan Sokoban Steps: " << plan.size() << endl;
+    cout << "Plan Sokoban Steps: " << planDebug.size() << endl;
 
     cout << "debug Plan" << endl;
     for(const auto& p : planDebug)
@@ -672,7 +686,7 @@ bool sokobanSolver::isDeadlock(Vertex* newPos) {
     return find(deadlocks.begin(), deadlocks.end(), newPos->data) != deadlocks.end();
 }
 
-vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRoboPos, Graph& map) {
+vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRoboPos, Graph& map, Pixel lastMovedDiamond) {
     //try to walk to left and up sides. If it can't walk to them then it can't push to them either
     //if it can walk to them try and walk to the other also
 
@@ -699,6 +713,10 @@ vector<SidePush> sokobanSolver::getPushableSides(Vertex& currPos, Vertex& currRo
             Vertex* newPosV = &map.findNode(newPos);
             //todo ref issue, so gotta get real ref to check pathtype
             if (newPosV == nullptr)
+                continue;
+
+            //if place we are pushing is where we came from, don't do it.
+            if (lastMovedDiamond == currRoboPos.data)
                 continue;
 
             //else get real node and check pathType
