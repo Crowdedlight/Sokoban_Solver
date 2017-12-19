@@ -70,6 +70,7 @@ private:
 
     void initHashFunction(int size);
     int getHashKey(Move move);
+    int getHashKey(Step &step);
     int getHeuristics(Pixel from, Pixel to);
     Pixel getClosestGoal(Pixel currPos, vector<Vertex *> goals);
     Pixel getClosestGoalWithNoDiamond(Pixel currPos, vector<Vertex *> goals, Graph& map);

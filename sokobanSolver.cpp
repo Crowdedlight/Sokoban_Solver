@@ -14,7 +14,7 @@ vector<string> sokobanSolver::solve(Map& map) {
 
     //make openlist
     list<Step> openList;
-    list<Step> closedList;
+    unordered_map<int, list<Step>> closedList;
     list<Step> solutionList;
 
     //make hashtable and hashfunction
@@ -71,25 +71,27 @@ vector<string> sokobanSolver::solve(Map& map) {
             counter = 0;
         }
 
-        //before popping next node sort list for heuristic
-//        openList.sort([] (const Step & lhs, const Step & rhs) {
-//            // < == ascending order(smallest first). > == descending order.
-//            return lhs.distanceToClosestGoal < rhs.distanceToClosestGoal;
-//        });
-
         //pop next node to go though
         Step nextStep = openList.front();
         openList.pop_front();
 
+        int hashkey = getHashKey(nextStep);
         //put currStep in closedlist
-        closedList.push_back(nextStep);
+        if (closedList[hashkey].empty())
+        {
+            list<Step> nSteps = {nextStep};
+            closedList[hashkey] = nSteps;
+        } else
+            closedList[hashkey].push_back(nextStep);
+
+        //closedList. push_back(nextStep);
 
         //if current branch is less than the best solution close it off, still saved in closedlist
         if (nextStep.robotTravelledLength > bestSolutionRobotMoves)
             continue;
 
         //getReference from closedSet as that is persistant
-        Step& currStep = closedList.back();
+        Step& currStep = closedList[hashkey].back();
 
         //set graph to diamond positions if we are not at root
         if (currStep.parent != nullptr)
@@ -150,13 +152,15 @@ vector<string> sokobanSolver::solve(Map& map) {
 
                     solutionList.push_back(newStep);
                 } else {
-                    //add to openList. Add to front if we get closer than what we was before
-//                    if (newStep.distanceToClosestGoal < bestDistanceToDimond)
-//                    {
-//                        bestDistanceToDimond = newStep.distanceToClosestGoal;
-//                        openList.push_front(newStep);
-//                    }else
+
+                    //quick find of first element that is bigger and then insert
+                    auto itL = upper_bound(openList.begin(), openList.end(), newStep, [](Step lhs, const Step &rhs) {
+                        return lhs.robotTravelledLength < rhs.robotTravelledLength;
+                    });
+                    if(itL == openList.end())
                         openList.push_back(newStep);
+                    else
+                        openList.insert(itL, newStep);
                 }
             }
         }
@@ -188,27 +192,27 @@ vector<string> sokobanSolver::solve(Map& map) {
     if (solutionList.empty())
     {
         cout << "Couldn't find a solution..." << endl;
-        out << "Couldn't find a solution..." << endl;
-        for (const auto& s : closedList)
-        {
-            int count = 0;
-            for(const auto& d : s.diamonds)
-            {
-                if(d->data == Pixel(2,4) || d->data == Pixel(4,4) || d->data == Pixel(6,4) || d->data == Pixel(8,4))
-                    count++;
-            }
-
-            if (count < 4)
-                continue;
-
-            for(const auto& d : s.diamonds)
-            {
-                cout << "(" << d->data << "), ";
-                out << "(" << d->data << "), ";
-            }
-            cout << endl;
-            out << endl;
-        }
+//        out << "Couldn't find a solution..." << endl;
+//        for (const auto& s : closedList)
+//        {
+//            int count = 0;
+//            for(const auto& d : s.diamonds)
+//            {
+//                if(d->data == Pixel(2,4) || d->data == Pixel(4,4) || d->data == Pixel(6,4) || d->data == Pixel(8,4))
+//                    count++;
+//            }
+//
+//            if (count < 4)
+//                continue;
+//
+//            for(const auto& d : s.diamonds)
+//            {
+//                cout << "(" << d->data << "), ";
+//                out << "(" << d->data << "), ";
+//            }
+//            cout << endl;
+//            out << endl;
+//        }
     }
     else {
         //select best solution and backtrack to create solution for robot
@@ -229,7 +233,7 @@ vector<string> sokobanSolver::solve(Map& map) {
         out << "Total Robot length: " << solutionList.front().robotTravelledLength << endl;
     }
     out.close();
-    
+
     return getRobotPlan(solutionList.front());
 }
 
@@ -616,7 +620,7 @@ bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<Move>>& has
         for(const auto &move : existingPos)
         {
             //if equal move is not new. Also checks for robo pos
-            if (move == mov)
+            if (move == mov && mov.length > move.length)
                 return false;
         }
 
@@ -716,6 +720,20 @@ int sokobanSolver::getHashKey(Move move) {
         hashKey += hashMap[v];
     }
     hashKey += hashMap[move.robopos];
+
+    return hashKey;
+}
+
+int sokobanSolver::getHashKey(Step &step) {
+
+    //hashkey is currently diamond indexes + robopos index
+    int hashKey = 0;
+    auto d = getDiamondsIndex(step.diamonds);
+    for(auto v : d) {
+
+        hashKey += hashMap[v];
+    }
+    hashKey += hashMap[step.finishedRoboPos->index];
 
     return hashKey;
 }

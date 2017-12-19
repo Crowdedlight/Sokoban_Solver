@@ -1,0 +1,13 @@
+
+solution list
+diamond:x: 3 y: 5, diamond:x: 1 y: 4, 
+Robot Travel Length: 10
+diamond:x: 1 y: 4, diamond:x: 3 y: 5, 
+Robot Travel Length: 7
+closed List size: 68
+
+
+DIAMONDS:
+x: 1 y: 4
+x: 3 y: 5
+Total Robot length: 7
