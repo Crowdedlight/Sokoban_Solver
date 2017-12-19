@@ -1,13 +1,15 @@
 
 solution list
-diamond:x: 3 y: 5, diamond:x: 1 y: 4, 
-Robot Travel Length: 10
-diamond:x: 1 y: 4, diamond:x: 3 y: 5, 
-Robot Travel Length: 7
-closed List size: 68
+diamond:x: 4 y: 2, diamond:x: 4 y: 4, diamond:x: 2 y: 4, diamond:x: 2 y: 5, 
+Robot Travel Length: 140
+diamond:x: 4 y: 2, diamond:x: 4 y: 4, diamond:x: 2 y: 4, diamond:x: 2 y: 5, 
+Robot Travel Length: 136
+closed List size: 14013
 
 
 DIAMONDS:
-x: 1 y: 4
-x: 3 y: 5
-Total Robot length: 7
+x: 4 y: 2
+x: 4 y: 4
+x: 2 y: 4
+x: 2 y: 5
+Total Robot length: 136

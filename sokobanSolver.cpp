@@ -28,7 +28,7 @@ vector<string> sokobanSolver::solve(Map& map) {
     aStar = AStar(graph);
 
     //best solution move number
-    auto bestSolutionRobotMoves = 150;
+    auto bestSolutionRobotMoves = 140;
 
     //find diamond position and add to openlist && add robot current pos to currentRobotPos
     vector<Vertex>& nodes = graph.getNodesRef();
@@ -172,13 +172,15 @@ vector<string> sokobanSolver::solve(Map& map) {
                 } else {
 
                     //quick find of first element that is bigger and then insert
-                    auto itL = upper_bound(openList.begin(), openList.end(), newStep, [](Step lhs, const Step &rhs) {
-                        return lhs.robotTravelledLength < rhs.robotTravelledLength;
-                    });
-                    if(itL == openList.end())
-                        openList.push_back(newStep);
-                    else
-                        openList.insert(itL, newStep);
+//                    auto itL = upper_bound(openList.begin(), openList.end(), newStep, [](Step lhs, const Step &rhs) {
+//                        return lhs.robotTravelledLength < rhs.robotTravelledLength;
+//                    });
+//                    if(itL == openList.end())
+//                        openList.push_back(newStep);
+//                    else
+//                        openList.insert(itL, newStep);
+
+                    openList.push_back(newStep);
                 }
             }
         }
@@ -634,7 +636,7 @@ bool sokobanSolver::isMoveNew(Step * step, unordered_map<int, vector<Move>>& has
         for(const auto &move : existingPos)
         {
             //if equal move is not new. Also checks for robo pos
-            if (move == mov && mov.length > move.length)
+            if (move == mov)
                 return false;
         }
 
